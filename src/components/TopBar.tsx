@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const supabase = getSupabaseBrowserClient();
@@ -24,7 +25,7 @@ export default function TopBar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       const user = data.session?.user;
       if (user) {
         setUserName(user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? null);

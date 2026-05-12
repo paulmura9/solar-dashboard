@@ -53,7 +53,8 @@
       "Bash(jobs)",
       "Bash(Write-Output \"Deleted both files\")",
       "Bash(rm \"C:/Users/paulm/Desktop/solar-dashboard/src/lib/supabase.ts\")",
-      "Bash(rm \"C:/Users/paulm/Desktop/solar-dashboard/src/proxy.ts\")"
+      "Bash(rm \"C:/Users/paulm/Desktop/solar-dashboard/src/proxy.ts\")",
+      "Bash(npx tsc *)"
     ]
   }
 }
