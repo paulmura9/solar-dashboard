@@ -1,0 +1,64 @@
+- generic [active] [ref=e1]:
+    - complementary [ref=e2]:
+        - generic [ref=e3]:
+            - img [ref=e4]
+            - generic [ref=e18]: LightTrack
+        - navigation [ref=e19]:
+            - link "Overview" [ref=e20] [cursor=pointer]:
+                - /url: /
+                - img [ref=e21]
+                - text: Overview
+            - link "Analytics" [ref=e26] [cursor=pointer]:
+                - /url: /analytics
+                - img [ref=e27]
+                - text: Analytics
+            - link "Dirt Detection" [ref=e28] [cursor=pointer]:
+                - /url: /dirt-detection
+                - img [ref=e29]
+                - text: Dirt Detection
+            - link "Control" [ref=e32] [cursor=pointer]:
+                - /url: /control
+                - img [ref=e33]
+                - text: Control
+            - link "Live Camera" [ref=e34] [cursor=pointer]:
+                - /url: /live
+                - img [ref=e35]
+                - text: Live Camera
+            - link "Settings" [ref=e38] [cursor=pointer]:
+                - /url: /settings
+                - img [ref=e39]
+                - text: Settings
+    - generic [ref=e42]:
+        - banner [ref=e43]:
+            - heading "LightTrack" [level=2] [ref=e44]
+            - button "P" [ref=e46]
+        - main [ref=e47]:
+            - generic [ref=e91]:
+                - generic [ref=e92]:
+                    - img [ref=e93]
+                    - generic [ref=e107]: LightTrack
+                - paragraph [ref=e108]: Always on the Bright Side.
+                - generic [ref=e111]:
+                    - paragraph [ref=e112]: Create an account
+                    - generic [ref=e113]:
+                        - generic [ref=e114]:
+                            - generic [ref=e115]: Email
+                            - textbox "Email" [ref=e116]:
+                                - /placeholder: you@example.com
+                        - generic [ref=e117]:
+                            - generic [ref=e118]: Password
+                            - textbox "Password" [ref=e119]:
+                                - /placeholder: ••••••••
+                        - generic [ref=e120]:
+                            - generic [ref=e121]: Confirm password
+                            - textbox "Confirm password" [ref=e122]:
+                                - /placeholder: ••••••••
+                        - button "Create account" [ref=e123]
+                - paragraph [ref=e124]:
+                    - text: Already have an account?
+                    - link "Sign in" [ref=e125] [cursor=pointer]:
+                        - /url: /auth/sign-in
+                - paragraph [ref=e126]: Solar Tracker IoT Dashboard — Authorised access only
+    - button "Open Next.js Dev Tools" [ref=e86] [cursor=pointer]:
+        - img [ref=e87]
+    - alert [ref=e90]

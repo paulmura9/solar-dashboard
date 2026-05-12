@@ -1,0 +1,50 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - generic [ref=e3]:
+      - img [ref=e4]
+      - generic [ref=e18]: LightTrack
+    - navigation [ref=e19]:
+      - link "Overview" [ref=e20] [cursor=pointer]:
+        - /url: /
+        - img [ref=e21]
+        - text: Overview
+      - link "Analytics" [ref=e26] [cursor=pointer]:
+        - /url: /analytics
+        - img [ref=e27]
+        - text: Analytics
+      - link "Dirt Detection" [ref=e28] [cursor=pointer]:
+        - /url: /dirt-detection
+        - img [ref=e29]
+        - text: Dirt Detection
+      - link "Control" [ref=e32] [cursor=pointer]:
+        - /url: /control
+        - img [ref=e33]
+        - text: Control
+      - link "Live Camera" [ref=e34] [cursor=pointer]:
+        - /url: /live
+        - img [ref=e35]
+        - text: Live Camera
+      - link "Settings" [ref=e38] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e39]
+        - text: Settings
+  - generic [ref=e42]:
+    - banner [ref=e43]:
+      - heading "Overview" [level=2] [ref=e44]
+      - button "P" [ref=e46]
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e92]: Recent Events
+        - generic [ref=e99]:
+          - generic [ref=e102]: Solar Power (W)
+          - generic [ref=e108]: Battery Voltage (V)
+          - generic [ref=e114]: Panel Elevation (°)
+          - generic [ref=e120]: Charging Power (W)
+  - button "Open Next.js Dev Tools" [ref=e129] [cursor=pointer]:
+    - generic [ref=e132]:
+      - text: Compiling
+      - generic [ref=e133]:
+        - generic [ref=e134]: .
+        - generic [ref=e135]: .
+        - generic [ref=e136]: .
+  - alert [ref=e137]
