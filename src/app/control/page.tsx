@@ -13,6 +13,8 @@ import PanelControlCard from "@/components/dashboard/PanelControlCard";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useCommandHistory } from "@/hooks/useCommandHistory";
+import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
+import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getDevices } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getCommandLabel } from "@/lib/solar/commands";
@@ -35,9 +37,10 @@ export default function ControlPage() {
   const [mounted, setMounted] = useState(false);
 
   const token = useApiToken();
-  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking } =
+  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
     usePanelCommands(token);
   const { commands, refresh: refreshCommands } = useCommandHistory(token, 10);
+  const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
   const fetchLatest = useCallback(async (): Promise<void> => {
     if (!token) {
@@ -85,6 +88,8 @@ export default function ControlPage() {
 
   return (
     <div className="space-y-5">
+      <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
+
       {!loading && !esp32Online && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
           <span>⚠</span>
@@ -126,6 +131,8 @@ export default function ControlPage() {
           currentMode={currentMode}
           sending={sending}
           esp32Online={esp32Online}
+          isStale={isStale}
+          isCommandCooldown={isCommandCooldown}
           onDirection={handleDirection}
           onSetMode={(m) => dispatchAndRefresh(() => setMode(m))}
           onReset={() => dispatchAndRefresh(resetPosition)}
@@ -139,7 +146,8 @@ export default function ControlPage() {
             <Button
               className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
               onClick={() => dispatchAndRefresh(startTracking)}
-              disabled={sending || !esp32Online}
+              disabled={sending || !esp32Online || isStale}
+              title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
             >
               Start Tracking
             </Button>
@@ -147,7 +155,8 @@ export default function ControlPage() {
               variant="outline"
               className="w-full border-[#ef4444] text-[#ef4444] hover:bg-red-50 text-sm font-medium"
               onClick={() => dispatchAndRefresh(stopTracking)}
-              disabled={sending || !esp32Online}
+              disabled={sending || !esp32Online || isStale}
+              title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
             >
               Stop Tracking
             </Button>

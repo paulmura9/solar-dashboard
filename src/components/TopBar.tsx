@@ -46,6 +46,7 @@ export default function TopBar() {
 
   async function handleSignOut() {
     localStorage.removeItem("lighttrack_last_activity");
+    sessionStorage.clear();
     await supabase.auth.signOut({ scope: "global" });
     window.location.replace("/login");
   }

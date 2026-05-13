@@ -12,6 +12,7 @@ export function useInactivitySignOut() {
   useEffect(() => {
     const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
     if (stored && Date.now() - parseInt(stored, 10) > INACTIVITY_MS) {
+      sessionStorage.clear();
       supabase.auth.signOut().then(() => {
         window.location.replace("/login");
       });

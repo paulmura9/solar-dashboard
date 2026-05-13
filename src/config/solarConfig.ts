@@ -1,3 +1,21 @@
+const FALLBACK_LAT = 45.7489;
+const FALLBACK_LON = 21.2087;
+
+const rawLat = process.env.NEXT_PUBLIC_LOCATION_LAT;
+const rawLon = process.env.NEXT_PUBLIC_LOCATION_LON;
+const parsedLat = rawLat != null ? parseFloat(rawLat) : NaN;
+const parsedLon = rawLon != null ? parseFloat(rawLon) : NaN;
+
+if (rawLat == null || isNaN(parsedLat)) {
+  console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LAT is missing or invalid, using fallback ${FALLBACK_LAT}`);
+}
+if (rawLon == null || isNaN(parsedLon)) {
+  console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LON is missing or invalid, using fallback ${FALLBACK_LON}`);
+}
+
+const locationLat = rawLat != null && !isNaN(parsedLat) ? parsedLat : FALLBACK_LAT;
+const locationLon = rawLon != null && !isNaN(parsedLon) ? parsedLon : FALLBACK_LON;
+
 export const SOLAR_CONFIG = {
   ldr: {
     maxValue: 4095,
@@ -28,8 +46,8 @@ export const SOLAR_CONFIG = {
   weather: {
     cloudCoverWarningPercent: 60,
     rainProbabilityWarningPercent: 40,
-    locationLat: 45.7489,
-    locationLon: 21.2087,
+    locationLat,
+    locationLon,
     timezone: "Europe/Bucharest",
   },
   panel: {

@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useApiToken } from "@/hooks/useApiToken";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { usePanelStatus } from "@/hooks/usePanelStatus";
+import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
+import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { downsample } from "@/lib/solar/chart";
@@ -82,6 +84,7 @@ export default function OverviewPage() {
   const token       = useApiToken();
   const weatherData = useWeatherData();
   const panelStatus = usePanelStatus(latest);
+  const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
   const hasLoadedRef = useRef(false);
   const mountedRef   = useRef(false);
@@ -180,6 +183,8 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-5">
+      <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
+
       {/* Device status bar */}
       <ErrorBoundary>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
