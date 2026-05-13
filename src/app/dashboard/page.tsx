@@ -64,6 +64,17 @@ function downsample(arr: SensorReading[], max = 60): SensorReading[] {
   return arr.filter((_, i) => i % step === 0);
 }
 
+const CACHE_KEY    = "dashboard_latest_data";
+const CACHE_TTL_MS = 30_000;
+
+type CachedDashboard = {
+  latest:  SensorReading | null;
+  history: SensorReading[];
+  events:  SystemEvent[];
+  devices: DeviceStatus[];
+  vision:  VisionResult | null;
+};
+
 export default function OverviewPage() {
   const [latest,  setLatest]  = useState<SensorReading | null>(null);
   const [history, setHistory] = useState<SensorReading[]>([]);
@@ -94,11 +105,18 @@ export default function OverviewPage() {
         getDevices(token),
         getLatestVision(token),
       ]);
+      const safeHistory = Array.isArray(historyData) ? historyData : [];
+      const safeEvents  = Array.isArray(eventsData)  ? eventsData  : [];
+      const safeDevices = Array.isArray(devicesData) ? devicesData : [];
       setLatest(latestData);
-      setHistory(Array.isArray(historyData) ? historyData : []);
-      setEvents(Array.isArray(eventsData) ? eventsData : []);
-      setDevices(Array.isArray(devicesData) ? devicesData : []);
+      setHistory(safeHistory);
+      setEvents(safeEvents);
+      setDevices(safeDevices);
       setVision(visionData);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        data:      { latest: latestData, history: safeHistory, events: safeEvents, devices: safeDevices, vision: visionData },
+        timestamp: Date.now(),
+      }));
     } catch {
       // leave all state as empty/null when backend is unavailable
     } finally {
@@ -115,6 +133,23 @@ export default function OverviewPage() {
     if (mountedRef.current) return;
     mountedRef.current = true;
     setMounted(true);
+
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached) as { data: CachedDashboard; timestamp: number };
+        if (Date.now() - timestamp < CACHE_TTL_MS) {
+          setLatest(data.latest);
+          setHistory(data.history);
+          setEvents(data.events);
+          setDevices(data.devices);
+          setVision(data.vision);
+        }
+      } catch {
+        sessionStorage.removeItem(CACHE_KEY);
+      }
+    }
+
     void fetchAllRef.current();
 
     const channel = supabase
@@ -145,6 +180,8 @@ export default function OverviewPage() {
     elevation: r.vertical_angle,
     charging:  Number(r.charging_power) || 0,
   }));
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-5">
