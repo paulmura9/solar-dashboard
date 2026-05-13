@@ -40,9 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.claude/    
+.claude/
 .playwright-mcp/
-CLAUDE.md         
-AGENTS.md        
-SKILL.md          
-.mcp.json   
+.mcp.json
+AGENTS.md
+CLAUDE.md
+SKILL.md
+error.txt
+*.tmp
