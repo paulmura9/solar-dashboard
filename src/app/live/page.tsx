@@ -9,6 +9,7 @@ import { ShimmerButton } from "@/components/magic/ShimmerButton";
 import { useApiToken } from "@/hooks/useApiToken";
 import { getDevices } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { DeviceStatus } from "@/lib/types";
 
 export default function LiveCameraPage() {
@@ -39,6 +40,7 @@ export default function LiveCameraPage() {
   const piOnline = pi?.is_online ?? false;
 
   return (
+    <ErrorBoundary>
     <div className="space-y-5">
       {/* Status bar */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -160,5 +162,6 @@ export default function LiveCameraPage() {
         </CardContent>
       </Card>
     </div>
+    </ErrorBoundary>
   );
 }

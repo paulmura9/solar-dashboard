@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage } from "@/lib/solar/energy";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
 import type { SensorReading, BatteryStatus } from "@/lib/types";
 
@@ -15,8 +16,8 @@ interface BatteryCardProps {
 
 function getBatteryColor(pct: number | null): string {
   if (pct == null) return "#94a3b8";
-  if (pct >= 70) return "#22c55e";
-  if (pct >= 30) return "#f59e0b";
+  if (pct >= SOLAR_CONFIG.battery.goodPercent) return "#22c55e";
+  if (pct >= SOLAR_CONFIG.battery.lowColorPercent) return "#f59e0b";
   return "#ef4444";
 }
 
@@ -31,8 +32,8 @@ const STATUS_STYLES: Record<BatteryStatus, { bg: string; color: string; border: 
 function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number | null }) {
   const cls = "text-blue-500";
   if (status === "CHARGING") return <BatteryCharging size={13} className={cls} />;
-  if (pct != null && pct >= 80)  return <BatteryFull size={13} className={cls} />;
-  if (pct != null && pct >= 40)  return <BatteryMedium size={13} className={cls} />;
+  if (pct != null && pct >= 80) return <BatteryFull size={13} className={cls} />;
+  if (pct != null && pct >= 40) return <BatteryMedium size={13} className={cls} />;
   return <BatteryLow size={13} className={cls} />;
 }
 

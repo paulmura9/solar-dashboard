@@ -16,6 +16,8 @@ import { useApiToken } from "@/hooks/useApiToken";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { usePanelStatus } from "@/hooks/usePanelStatus";
 import { getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision } from "@/lib/api";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
+import { downsample } from "@/lib/solar/chart";
 import SolarProductionCard from "@/components/dashboard/SolarProductionCard";
 import BatteryCard from "@/components/dashboard/BatteryCard";
 import TrackingStatusCard from "@/components/dashboard/TrackingStatusCard";
@@ -55,13 +57,6 @@ const SEVERITY_BADGE: Record<Severity, React.CSSProperties> = {
 function parseSubsystem(eventType: string): string {
   const word = eventType.split("_")[0];
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-}
-
-function downsample(arr: SensorReading[], max = 60): SensorReading[] {
-  if (!Array.isArray(arr) || arr.length === 0) return [];
-  if (arr.length <= max) return arr;
-  const step = Math.floor(arr.length / max);
-  return arr.filter((_, i) => i % step === 0);
 }
 
 const CACHE_KEY    = "dashboard_latest_data";
@@ -173,7 +168,7 @@ export default function OverviewPage() {
   const displayDevices     = devices.length > 0 ? devices : OFFLINE_PLACEHOLDER_DEVICES;
   const isPlaceholderDevices = devices.length === 0;
 
-  const chartData = downsample(history).map((r) => ({
+  const chartData = downsample(history, SOLAR_CONFIG.chart.downsampleDashboard).map((r) => ({
     time:      new Date(r.timestamp).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }),
     solar:     Number(r.solar_power) || 0,
     voltage:   Number(r.battery_voltage) || 0,

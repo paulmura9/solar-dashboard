@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { Navigation, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatAngle } from "@/lib/solar/energy";
+import { dirtColor } from "@/lib/solar/status";
 import type { PanelMode, PanelStatusData, VisionResult } from "@/lib/types";
 
 interface TrackingStatusCardProps {
@@ -16,13 +17,6 @@ const MODE_STYLES: Record<PanelMode, { color: string; bg: string; border: string
   ERROR:    { color: "#991b1b", bg: "#fef2f2", border: "#fca5a5" },
   NIGHT:    { color: "#1e3a5f", bg: "#eff6ff", border: "#bfdbfe" },
 };
-
-function dirtColor(pct: number | null): string {
-  if (pct == null) return "#94a3b8";
-  if (pct < 20)   return "#22c55e";
-  if (pct <= 50)  return "#f59e0b";
-  return "#ef4444";
-}
 
 const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
   const mode: PanelMode = data?.mode ?? "IDLE";
@@ -40,13 +34,13 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
         {/* Angles */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1e293b] mb-0.5">Azimuth</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1e293b] mb-0.5">Commanded horizontal</p>
             <p className="text-xl font-bold font-mono text-[#1e293b]">
               {data ? formatAngle(data.horizontalAngle) : "—"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1e293b] mb-0.5">Elevation</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1e293b] mb-0.5">Commanded vertical</p>
             <p className="text-xl font-bold font-mono text-[#1e293b]">
               {data ? formatAngle(data.verticalAngle) : "—"}
             </p>

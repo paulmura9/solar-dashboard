@@ -8,6 +8,7 @@ import type { CommandDirection, TrackingMode } from "@/lib/types";
 interface PanelControlCardProps {
   currentMode: TrackingMode | null;
   sending: boolean;
+  esp32Online: boolean;
   onDirection: (dir: CommandDirection) => void;
   onSetMode: (mode: string) => void;
   onReset: () => void;
@@ -22,6 +23,7 @@ const MODES: { mode: TrackingMode; label: string }[] = [
 const PanelControlCard: FC<PanelControlCardProps> = ({
   currentMode,
   sending,
+  esp32Online,
   onDirection,
   onSetMode,
   onReset,
@@ -48,7 +50,7 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
                   ? "bg-[#3b82f6] text-white border-[#3b82f6] hover:bg-[#2563eb]"
                   : "border-[#e2e8f0] text-[#64748b] hover:border-[#3b82f6] hover:text-[#3b82f6]"
               }`}
-              disabled={sending}
+              disabled={sending || !esp32Online}
               onClick={() => onSetMode(mode)}
             >
               {currentMode === mode && <Check size={11} />}
@@ -65,7 +67,7 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
             </div>
           )}
           <div className={!isManual ? "opacity-40 pointer-events-none" : ""}>
-            <DPad onDirection={onDirection} disabled={sending} />
+            <DPad onDirection={onDirection} disabled={sending || !esp32Online} />
           </div>
         </div>
 
@@ -73,7 +75,7 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
           variant="outline"
           size="sm"
           className="w-full text-xs h-8 gap-1.5 border-[#e2e8f0] text-[#64748b] hover:border-[#94a3b8]"
-          disabled={sending}
+          disabled={sending || !esp32Online}
           onClick={onReset}
         >
           <RotateCcw size={12} />

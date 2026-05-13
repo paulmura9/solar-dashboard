@@ -10,6 +10,20 @@ export const SOLAR_CONFIG = {
     fullVoltage: 8.4,
     lowPercent: 20,
     warningPercent: 40,
+    goodPercent: 70,
+    lowColorPercent: 30,
+  },
+  dirt: {
+    cleanThreshold: 20,
+    warningThreshold: 50,
+    cleaningRequiredThreshold: 35,
+  },
+  chart: {
+    downsampleDashboard: 60,
+    downsampleAnalytics: 120,
+  },
+  storage: {
+    signedUrlTtlSeconds: 3600,
   },
   weather: {
     cloudCoverWarningPercent: 60,

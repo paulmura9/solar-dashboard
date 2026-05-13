@@ -1,4 +1,4 @@
-export function isNullOrZero(value: number | null | undefined): boolean {
+function isNullOrZero(value: number | null | undefined): boolean {
   return value == null || value === 0;
 }
 
@@ -20,4 +20,9 @@ export function formatEnergy(wh: number | null): string {
 export function formatAngle(deg: number | null): string {
   if (deg == null) return "—";
   return `${deg.toFixed(1)}°`;
+}
+
+export function formatPower(w: number | null | undefined): string {
+  if (w === null || w === undefined) return "—";
+  return `${w.toFixed(1)} W`;
 }

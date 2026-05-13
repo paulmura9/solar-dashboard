@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useApiToken } from "@/hooks/useApiToken";
 import { getDevices } from "@/lib/api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { DeviceStatus } from "@/lib/types";
 
 const DEVICE_DISPLAY: Record<string, { label: string; icon: React.ElementType }> = {
@@ -57,6 +58,7 @@ export default function SettingsPage() {
   }, [fetchData]);
 
   return (
+    <ErrorBoundary>
     <div className="space-y-5 max-w-3xl">
       {/* Connected services */}
       <Card className="border border-[#e2e8f0] ring-0">
@@ -203,5 +205,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+    </ErrorBoundary>
   );
 }

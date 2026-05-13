@@ -115,8 +115,11 @@ export async function getLatestReading(token: string): Promise<SensorReading | n
   return mapReading(result.data);
 }
 
-export async function getReadingsHistory(token: string, _hours = 24): Promise<SensorReading[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>("/api/readings/history?limit=500", token);
+export async function getReadingsHistory(token: string, hours = 24): Promise<SensorReading[]> {
+  const result = await apiFetch<ApiResponse<unknown[]>>(
+    `/api/readings/history?hours=${hours}&limit=500`,
+    token
+  );
   if (!Array.isArray(result?.data)) return [];
   return result.data.map(mapReading);
 }
@@ -212,7 +215,7 @@ export async function getSignedImageUrl(path: string): Promise<string | null> {
 
   const { data, error } = await supabase.storage
     .from("panel-images")
-    .createSignedUrl(path, 3600);
+    .createSignedUrl(path, SOLAR_CONFIG.storage.signedUrlTtlSeconds);
 
   if (error || !data?.signedUrl) {
     console.debug("[storage] No signed URL for path:", path);

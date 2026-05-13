@@ -80,3 +80,10 @@ export function getBalanceBadgeVariant(
     case "UNBALANCED": return "destructive";
   }
 }
+
+export function dirtColor(pct: number | null): string {
+  if (pct === null) return "#94a3b8";
+  if (pct < SOLAR_CONFIG.dirt.cleanThreshold) return "#22c55e";
+  if (pct <= SOLAR_CONFIG.dirt.warningThreshold) return "#f59e0b";
+  return "#ef4444";
+}

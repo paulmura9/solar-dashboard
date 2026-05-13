@@ -13,10 +13,10 @@ import PanelControlCard from "@/components/dashboard/PanelControlCard";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useCommandHistory } from "@/hooks/useCommandHistory";
-import { getLatestReading } from "@/lib/api";
+import { getLatestReading, getDevices } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getCommandLabel } from "@/lib/solar/commands";
-import type { SensorReading, CommandStatus } from "@/lib/types";
+import type { SensorReading, CommandStatus, DeviceStatus } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const supabase = getSupabaseBrowserClient();
@@ -30,6 +30,7 @@ const STATUS_STYLE: Record<CommandStatus, React.CSSProperties> = {
 
 export default function ControlPage() {
   const [latest,  setLatest]  = useState<SensorReading | null>(null);
+  const [devices, setDevices] = useState<DeviceStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -43,8 +44,12 @@ export default function ControlPage() {
       setLoading(false);
       return;
     }
-    const data = await getLatestReading(token);
-    setLatest(data);
+    const [reading, deviceData] = await Promise.all([
+      getLatestReading(token),
+      getDevices(token),
+    ]);
+    setLatest(reading);
+    setDevices(deviceData);
     setLoading(false);
   }, [token]);
 
@@ -62,6 +67,8 @@ export default function ControlPage() {
     return () => { void supabase.removeChannel(sub); };
   }, [fetchLatest]);
 
+  const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
+
   const currentMode = latest?.tracking_mode ?? null;
   const hAngle = latest?.horizontal_angle ?? 90;
   const vAngle = latest?.vertical_angle  ?? 90;
@@ -78,6 +85,15 @@ export default function ControlPage() {
 
   return (
     <div className="space-y-5">
+      {!loading && !esp32Online && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+          <span>⚠</span>
+          <span>
+            ESP32 is offline. Commands will not be delivered until the device reconnects.
+          </span>
+        </div>
+      )}
+
       {/* Panel visualization */}
       <ErrorBoundary>
       <Card className="relative overflow-hidden">
@@ -109,6 +125,7 @@ export default function ControlPage() {
         <PanelControlCard
           currentMode={currentMode}
           sending={sending}
+          esp32Online={esp32Online}
           onDirection={handleDirection}
           onSetMode={(m) => dispatchAndRefresh(() => setMode(m))}
           onReset={() => dispatchAndRefresh(resetPosition)}
@@ -122,7 +139,7 @@ export default function ControlPage() {
             <Button
               className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
               onClick={() => dispatchAndRefresh(startTracking)}
-              disabled={sending}
+              disabled={sending || !esp32Online}
             >
               Start Tracking
             </Button>
@@ -130,7 +147,7 @@ export default function ControlPage() {
               variant="outline"
               className="w-full border-[#ef4444] text-[#ef4444] hover:bg-red-50 text-sm font-medium"
               onClick={() => dispatchAndRefresh(stopTracking)}
-              disabled={sending}
+              disabled={sending || !esp32Online}
             >
               Stop Tracking
             </Button>
