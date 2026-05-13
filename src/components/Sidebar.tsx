@@ -32,7 +32,7 @@ function SolarLogo() {
   });
 
   return (
-    <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <svg width="48" height="48" viewBox="0 -2 48 48" fill="none" aria-hidden="true">
       <circle cx="39" cy="7" r="4" fill="#f59e0b" />
       {rays.map((r, i) => (
         <line
