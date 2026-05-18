@@ -20,7 +20,13 @@ export default function LoginPage() {
     const supabase = getSupabaseBrowserClient();
 
     try {
-      await supabase.auth.signOut();
+      // Clear any stale session before signing in to avoid cookie conflicts
+      // that can survive across reloads in non-incognito browsers.
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      if (existingSession) {
+        await supabase.auth.signOut();
+      }
+
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
       if (authError) {

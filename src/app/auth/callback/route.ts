@@ -6,6 +6,9 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
 
+  // Open-redirect protection: only allow same-origin relative paths.
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
@@ -14,8 +17,9 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    console.error("OAuth callback error:", error.message);
     return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(`${origin}${safeNext}`);
 }
