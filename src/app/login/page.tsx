@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { SolarLogo } from "@/components/SolarLogo";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -58,6 +59,16 @@ export default function LoginPage() {
             Authentication required
           </p>
 
+          <GoogleSignInButton />
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1 bg-[#e2e8f0]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#94a3b8]">
+              or
+            </span>
+            <div className="h-px flex-1 bg-[#e2e8f0]" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label
@@ -110,6 +121,15 @@ export default function LoginPage() {
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
+
+            <div className="text-center">
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs text-[#3b82f6] hover:underline font-medium"
+              >
+                Forgot your password?
+              </Link>
+            </div>
           </form>
         </div>
       </div>
