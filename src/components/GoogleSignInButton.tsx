@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface GoogleSignInButtonProps {
@@ -10,6 +10,11 @@ interface GoogleSignInButtonProps {
 export function GoogleSignInButton({ className = "" }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset stuck loading state when the user navigates back from Google OAuth.
+  useEffect(() => {
+    setLoading(false);
+  }, []);
 
   async function handleClick() {
     setError(null);
@@ -36,7 +41,7 @@ export function GoogleSignInButton({ className = "" }: GoogleSignInButtonProps) 
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="w-full h-10 rounded-lg bg-white border border-[#dadce0] hover:bg-[#f8f9fa] hover:shadow-[0_1px_3px_rgba(0,0,0,0.12)] active:bg-[#f1f3f4] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4285F4] focus-visible:outline-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100 transition-all duration-150 flex items-center justify-center gap-2 text-sm font-medium text-[#3c4043]"
+        className="w-full h-10 rounded-lg bg-white border border-[#dadce0] hover:bg-[#f8f9fa] hover:shadow-[0_1px_3px_rgba(0,0,0,0.12)] active:bg-[#f1f3f4] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4285F4] focus-visible:outline-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none disabled:active:scale-100 transition-all duration-150 flex items-center justify-center gap-2 text-sm font-medium text-[#3c4043]"
       >
         {loading ? (
           <span
