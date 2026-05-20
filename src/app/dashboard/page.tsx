@@ -16,6 +16,7 @@ import { useWeatherData } from "@/hooks/useWeatherData";
 import { usePanelStatus } from "@/hooks/usePanelStatus";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
 import { useWSEvent } from "@/hooks/useWSEvent";
+import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
@@ -61,6 +62,8 @@ function parseSubsystem(eventType: string): string {
 
 const CACHE_KEY    = "dashboard_latest_data";
 const CACHE_TTL_MS = 30_000;
+const HISTORY_CAP  = 500;
+const EVENTS_CAP   = 10;
 
 type CachedDashboard = {
   latest:  SensorReading | null;
@@ -97,7 +100,7 @@ export default function OverviewPage() {
       const [latestData, historyData, eventsData, devicesData, visionData] = await Promise.all([
         getLatestReading(token),
         getReadingsHistory(token, 24),
-        getRecentEvents(token, 10),
+        getRecentEvents(token, EVENTS_CAP),
         getDevices(token),
         getLatestVision(token),
       ]);
@@ -123,10 +126,40 @@ export default function OverviewPage() {
   const fetchAllRef = useRef(fetchAll);
   useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
 
-  const handleTelemetryPing = useCallback((): void => {
-    void fetchAllRef.current();
+  const handleTelemetry = useCallback((reading: SensorReading): void => {
+    setLatest(reading);
+    setHistory((prev) => {
+      const next = prev.length > 0 && prev[prev.length - 1].id === reading.id
+        ? prev
+        : [...prev, reading];
+      return next.length > HISTORY_CAP ? next.slice(next.length - HISTORY_CAP) : next;
+    });
   }, []);
-  useWSEvent("telemetry_update", handleTelemetryPing);
+  useWSEvent("telemetry_update", handleTelemetry);
+
+  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => d.device_name === update.device_name);
+      if (idx === -1) return [...prev, update];
+      const next = prev.slice();
+      next[idx] = update;
+      return next;
+    });
+  }, []);
+  useWSEvent("device_status_update", handleDeviceStatus);
+
+  const handleVision = useCallback((update: VisionResult): void => {
+    setVision(update);
+  }, []);
+  useWSEvent("vision_update", handleVision);
+
+  const handleEvent = useCallback((event: SystemEvent): void => {
+    setEvents((prev) => [event, ...prev].slice(0, EVENTS_CAP));
+  }, []);
+  useWSEvent("event_notification", handleEvent);
+
+  const resync = useCallback((): void => { void fetchAllRef.current(); }, []);
+  useWSReconnectResync(resync);
 
   useEffect(() => {
     if (mountedRef.current) return;
@@ -152,15 +185,6 @@ export default function OverviewPage() {
     }
 
     void fetchAllRef.current();
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") void fetchAllRef.current();
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
   }, []);
 
   const displayDevices     = devices.length > 0 ? devices : OFFLINE_PLACEHOLDER_DEVICES;

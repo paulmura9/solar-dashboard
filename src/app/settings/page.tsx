@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { CheckCircle, XCircle, Cpu, Server, Camera, Radio } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApiToken } from "@/hooks/useApiToken";
+import { useWSEvent } from "@/hooks/useWSEvent";
+import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import { getDevices } from "@/lib/api";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import type { DeviceStatus } from "@/lib/types";
@@ -52,10 +54,26 @@ export default function SettingsPage() {
     setLoading(false);
   }, [token]);
 
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+
   useEffect(() => {
-    const id = setTimeout(() => { void fetchData(); }, 0);
-    return () => clearTimeout(id);
-  }, [fetchData]);
+    void fetchDataRef.current();
+  }, [token]);
+
+  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => d.device_name === update.device_name);
+      if (idx === -1) return [...prev, update];
+      const next = prev.slice();
+      next[idx] = update;
+      return next;
+    });
+  }, []);
+  useWSEvent("device_status_update", handleDeviceStatus);
+
+  const resync = useCallback((): void => { void fetchDataRef.current(); }, []);
+  useWSReconnectResync(resync);
 
   return (
     <ErrorBoundary>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApiToken } from "@/hooks/useApiToken";
+import { useWSEvent } from "@/hooks/useWSEvent";
+import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import { getLatestVision, getVisionHistory, getSignedImageUrl } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { dirtColor } from "@/lib/solar/status";
@@ -98,10 +100,29 @@ export default function DirtDetectionPage() {
     setLoading(false);
   }, [token]);
 
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+
   useEffect(() => {
-    const id = setTimeout(() => { void fetchData(); }, 0);
-    return () => clearTimeout(id);
-  }, [fetchData]);
+    void fetchDataRef.current();
+  }, [token]);
+
+  const handleVision = useCallback((update: VisionResult): void => {
+    setLatest(update);
+    setHistory((prev) => [update, ...prev].slice(0, 50));
+    void (async (): Promise<void> => {
+      const [imgUrl, procUrl] = await Promise.all([
+        update.image_path           ? getSignedImageUrl(update.image_path)           : Promise.resolve(null),
+        update.processed_image_path ? getSignedImageUrl(update.processed_image_path) : Promise.resolve(null),
+      ]);
+      setImageUrl(imgUrl);
+      setProcessedImageUrl(procUrl);
+    })();
+  }, []);
+  useWSEvent("vision_update", handleVision);
+
+  const resync = useCallback((): void => { void fetchDataRef.current(); }, []);
+  useWSReconnectResync(resync);
 
   const energyImpact = latest
     ? computeEnergyImpact(latest.dirt_level_percent ?? 0)

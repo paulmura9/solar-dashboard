@@ -15,6 +15,7 @@ import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useCommandHistory } from "@/hooks/useCommandHistory";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
 import { useWSEvent } from "@/hooks/useWSEvent";
+import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getDevices } from "@/lib/api";
 import { getCommandLabel } from "@/lib/solar/commands";
@@ -36,7 +37,7 @@ export default function ControlPage() {
   const token = useApiToken();
   const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
     usePanelCommands(token);
-  const { commands, refresh: refreshCommands } = useCommandHistory(token, 10);
+  const { commands } = useCommandHistory(token, 10);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
   const fetchLatest = useCallback(async (): Promise<void> => {
@@ -56,10 +57,24 @@ export default function ControlPage() {
   const fetchLatestRef = useRef(fetchLatest);
   useEffect(() => { fetchLatestRef.current = fetchLatest; }, [fetchLatest]);
 
-  const handleTelemetryPing = useCallback((): void => {
-    void fetchLatestRef.current();
+  const handleTelemetry = useCallback((reading: SensorReading): void => {
+    setLatest(reading);
   }, []);
-  useWSEvent("telemetry_update", handleTelemetryPing);
+  useWSEvent("telemetry_update", handleTelemetry);
+
+  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => d.device_name === update.device_name);
+      if (idx === -1) return [...prev, update];
+      const next = prev.slice();
+      next[idx] = update;
+      return next;
+    });
+  }, []);
+  useWSEvent("device_status_update", handleDeviceStatus);
+
+  const resync = useCallback((): void => { void fetchLatestRef.current(); }, []);
+  useWSReconnectResync(resync);
 
   useEffect(() => {
     void fetchLatestRef.current();
@@ -76,10 +91,6 @@ export default function ControlPage() {
     [movePanel, hAngle, vAngle]
   );
 
-  async function dispatchAndRefresh(action: () => Promise<void>): Promise<void> {
-    await action();
-    refreshCommands();
-  }
 
   return (
     <div className="space-y-5">
@@ -102,7 +113,7 @@ export default function ControlPage() {
             <span>Panel Visualization</span>
             {loading
               ? <Skeleton className="h-5 w-20" />
-              : <span className="text-xs font-normal text-[#64748b]">Auto-refresh every 10 s</span>}
+              : <span className="text-xs font-normal text-[#64748b]">Live telemetry</span>}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -127,8 +138,8 @@ export default function ControlPage() {
           isStale={isStale}
           isCommandCooldown={isCommandCooldown}
           onDirection={handleDirection}
-          onSetMode={(m) => dispatchAndRefresh(() => setMode(m))}
-          onReset={() => dispatchAndRefresh(resetPosition)}
+          onSetMode={(m) => { void setMode(m); }}
+          onReset={() => { void resetPosition(); }}
         />
 
         <Card>
@@ -138,7 +149,7 @@ export default function ControlPage() {
           <CardContent className="space-y-3">
             <Button
               className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
-              onClick={() => dispatchAndRefresh(startTracking)}
+              onClick={() => { void startTracking(); }}
               disabled={sending || !esp32Online || isStale}
               title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
             >
@@ -147,7 +158,7 @@ export default function ControlPage() {
             <Button
               variant="outline"
               className="w-full border-[#ef4444] text-[#ef4444] hover:bg-red-50 text-sm font-medium"
-              onClick={() => dispatchAndRefresh(stopTracking)}
+              onClick={() => { void stopTracking(); }}
               disabled={sending || !esp32Online || isStale}
               title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
             >

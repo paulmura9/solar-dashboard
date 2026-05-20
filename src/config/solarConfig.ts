@@ -54,9 +54,6 @@ export const SOLAR_CONFIG = {
     daylightHoursDefault: 6.0,
     maxLossFactor: 0.85,
   },
-  refresh: {
-    weatherMs: 600_000,
-  },
   camera: {
     streamUrl: process.env.NEXT_PUBLIC_CAMERA_STREAM_URL ?? "http://192.168.100.145:5000/stream",
   },

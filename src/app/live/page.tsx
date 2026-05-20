@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Video, Camera, Wifi, WifiOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShimmerButton } from "@/components/magic/ShimmerButton";
 import { useApiToken } from "@/hooks/useApiToken";
+import { useWSEvent } from "@/hooks/useWSEvent";
+import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import { getDevices } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -28,10 +30,26 @@ export default function LiveCameraPage() {
     setLoading(false);
   }, [token]);
 
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+
   useEffect(() => {
-    const id = setTimeout(() => { void fetchData(); }, 0);
-    return () => clearTimeout(id);
-  }, [fetchData]);
+    void fetchDataRef.current();
+  }, [token]);
+
+  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => d.device_name === update.device_name);
+      if (idx === -1) return [...prev, update];
+      const next = prev.slice();
+      next[idx] = update;
+      return next;
+    });
+  }, []);
+  useWSEvent("device_status_update", handleDeviceStatus);
+
+  const resync = useCallback((): void => { void fetchDataRef.current(); }, []);
+  useWSReconnectResync(resync);
 
   const safeDevices = Array.isArray(devices) ? devices : [];
   const camera = safeDevices.find((d) => d.device_name === "CAMERA");
