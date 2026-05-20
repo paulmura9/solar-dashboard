@@ -6,11 +6,13 @@ const rawLon = process.env.NEXT_PUBLIC_LOCATION_LON;
 const parsedLat = rawLat != null ? parseFloat(rawLat) : NaN;
 const parsedLon = rawLon != null ? parseFloat(rawLon) : NaN;
 
-if (rawLat == null || isNaN(parsedLat)) {
-  console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LAT is missing or invalid, using fallback ${FALLBACK_LAT}`);
-}
-if (rawLon == null || isNaN(parsedLon)) {
-  console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LON is missing or invalid, using fallback ${FALLBACK_LON}`);
+if (process.env.NODE_ENV === "development") {
+  if (rawLat == null || isNaN(parsedLat)) {
+    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LAT is missing or invalid, using fallback ${FALLBACK_LAT}`); // dev: optional env warning
+  }
+  if (rawLon == null || isNaN(parsedLon)) {
+    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LON is missing or invalid, using fallback ${FALLBACK_LON}`); // dev: optional env warning
+  }
 }
 
 const locationLat = rawLat != null && !isNaN(parsedLat) ? parsedLat : FALLBACK_LAT;

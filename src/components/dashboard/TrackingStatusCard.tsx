@@ -31,7 +31,6 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Angles */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1e293b] mb-0.5">Commanded horizontal</p>
@@ -47,7 +46,6 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
           </div>
         </div>
 
-        {/* Mode badge */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#64748b]">Mode</span>
           <span
@@ -58,7 +56,6 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
           </span>
         </div>
 
-        {/* Panel stable/moving badge */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#64748b]">Panel</span>
           {data?.isMoving ? (
@@ -73,7 +70,6 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
           )}
         </div>
 
-        {/* Dirt level */}
         <div className="flex items-center justify-between pt-1 border-t border-[#e2e8f0]">
           <span className="text-xs text-[#64748b]">Dirt level</span>
           <span

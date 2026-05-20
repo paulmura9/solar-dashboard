@@ -29,9 +29,6 @@ export function DashboardWSProvider({
 }: DashboardWSProviderProps): React.ReactElement {
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  // Lazy init: construct the client once, but only if NEXT_PUBLIC_WS_URL is set.
-  // Constructing the class is side-effect-free; the actual socket open happens
-  // in the effect below.
   const [client] = useState<DashboardWSClient | null>(() => {
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
     if (wsUrl === undefined || wsUrl.length === 0) return null;
@@ -47,10 +44,10 @@ export function DashboardWSProvider({
       onConnectionChange: (connected: boolean): void => {
         setIsConnected(connected);
       },
+      onResync: refetchAfterReconnect,
       onLog: (level, event, data): void => {
         if (process.env.NODE_ENV === "development") {
-          // dev: structured logging point for the WS client
-          console[level](`[ws] ${event}`, data ?? "");
+          console[level](`[ws] ${event}`, data ?? ""); // dev: WS diagnostic sink, dev-only
         }
       },
     });
@@ -73,4 +70,16 @@ export function DashboardWSProvider({
 
 export function useDashboardWS(): DashboardWSContextValue {
   return useContext(DashboardWSContext);
+}
+
+async function refetchAfterReconnect(since: Date): Promise<void> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (apiUrl === undefined || apiUrl.length === 0) return;
+
+  const sinceIso = since.toISOString();
+  await Promise.allSettled([
+    fetch(`${apiUrl}/api/readings/latest`, { credentials: "include" }),
+    fetch(`${apiUrl}/api/events?since=${encodeURIComponent(sinceIso)}`, { credentials: "include" }),
+    fetch(`${apiUrl}/api/commands?since=${encodeURIComponent(sinceIso)}`, { credentials: "include" }),
+  ]);
 }

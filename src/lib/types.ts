@@ -1,7 +1,3 @@
-/* ============================================================
-   Database types - mirrors Supabase PostgreSQL schema
-   ============================================================ */
-
 export type TrackingMode = "AUTO" | "MANUAL" | "IDLE" | "ERROR";
 export type BatteryStatus = "CHARGING" | "DISCHARGING" | "IDLE" | "LOW" | "UNKNOWN";
 export type CommandType = "SET_MODE" | "MOVE_PANEL" | "RESET_POSITION" | "REQUEST_STATUS" | "START_TRACKING" | "STOP_TRACKING";
@@ -79,10 +75,6 @@ export interface DeviceCommand {
   acknowledged_at: string | null;
 }
 
-// ============================================================
-// Derived / computed types (not stored in DB)
-// ============================================================
-
 export type BalanceStatus = "BALANCED" | "ADJUSTING" | "UNBALANCED" | "NIGHT" | "LOW_LIGHT";
 export type PanelMode = "TRACKING" | "MANUAL" | "IDLE" | "ERROR" | "NIGHT";
 export type WeatherStatus = "CLEAR" | "PARTLY_CLOUDY" | "CLOUDY" | "RAIN" | "UNKNOWN";
@@ -119,7 +111,6 @@ export interface PanelStatusData {
   lightSensors: LightSensorData;
 }
 
-// Supabase generated database type (simplified for our use)
 export interface Database {
   public: {
     Tables: {

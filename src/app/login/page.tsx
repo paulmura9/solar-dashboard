@@ -20,8 +20,6 @@ export default function LoginPage() {
     const supabase = getSupabaseBrowserClient();
 
     try {
-      // Clear any stale session before signing in to avoid cookie conflicts
-      // that can survive across reloads in non-incognito browsers.
       const { data: { session: existingSession } } = await supabase.auth.getSession();
       if (existingSession) {
         await supabase.auth.signOut();
@@ -44,7 +42,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-4">
-      {/* Brand */}
       <div className="flex flex-col items-center mb-8">
         <div className="flex items-center gap-2.5 mb-2">
           <SolarLogo />
@@ -55,9 +52,7 @@ export default function LoginPage() {
         <p className="text-xs text-[#94a3b8] tracking-wide">Always on the Bright Side.</p>
       </div>
 
-      {/* Card */}
       <div className="w-full max-w-sm bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
-        {/* Accent bar */}
         <div className="h-0.5 bg-gradient-to-r from-green-600 to-green-400" />
 
         <div className="px-7 py-8">

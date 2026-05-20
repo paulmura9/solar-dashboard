@@ -50,14 +50,29 @@ function computeEnergyImpact(dirtPct: number): {
   return { powerLostW, energyLostTodayWh, energyLostWeekWh, lossFactor };
 }
 
+function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full h-48 rounded-lg overflow-hidden bg-slate-100">
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-slate-200 rounded-lg" />}
+      {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, next/image would require remotePatterns config */}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+
 export default function DirtDetectionPage() {
   const [latest,            setLatest]            = useState<VisionResult | null>(null);
   const [history,           setHistory]           = useState<VisionResult[]>([]);
   const [imageUrl,          setImageUrl]          = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
-  const [loading,              setLoading]              = useState(true);
-  const [rawImageLoaded,       setRawImageLoaded]       = useState(false);
-  const [processedImageLoaded, setProcessedImageLoaded] = useState(false);
+  const [loading,           setLoading]           = useState(true);
 
   const token = useApiToken();
 
@@ -88,9 +103,6 @@ export default function DirtDetectionPage() {
     return () => clearTimeout(id);
   }, [fetchData]);
 
-  useEffect(() => { setRawImageLoaded(false); }, [imageUrl]);
-  useEffect(() => { setProcessedImageLoaded(false); }, [processedImageUrl]);
-
   const energyImpact = latest
     ? computeEnergyImpact(latest.dirt_level_percent ?? 0)
     : null;
@@ -98,7 +110,6 @@ export default function DirtDetectionPage() {
   return (
     <ErrorBoundary>
       <div className="space-y-5">
-        {/* Latest analysis */}
         <Card className="border border-[#e2e8f0] ring-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-semibold text-[#1e293b]">
@@ -200,7 +211,6 @@ export default function DirtDetectionPage() {
           </CardContent>
         </Card>
 
-        {/* Images */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border border-[#e2e8f0] ring-0">
             <CardHeader>
@@ -208,18 +218,7 @@ export default function DirtDetectionPage() {
             </CardHeader>
             <CardContent>
               {imageUrl ? (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-slate-100">
-                  {!rawImageLoaded && (
-                    <div className="absolute inset-0 animate-pulse bg-slate-200 rounded-lg" />
-                  )}
-                  <img
-                    src={imageUrl}
-                    alt="Panel surface capture"
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${rawImageLoaded ? "opacity-100" : "opacity-0"}`}
-                    onLoad={() => setRawImageLoaded(true)}
-                    onError={() => setRawImageLoaded(true)}
-                  />
-                </div>
+                <ImageWithSkeleton key={imageUrl} src={imageUrl} alt="Panel surface capture" />
               ) : (
                 <div className="w-full h-48 rounded-lg bg-slate-100 flex flex-col items-center justify-center gap-2">
                   <span className="text-slate-400 text-sm">No image available</span>
@@ -235,18 +234,7 @@ export default function DirtDetectionPage() {
             </CardHeader>
             <CardContent>
               {processedImageUrl ? (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-slate-100">
-                  {!processedImageLoaded && (
-                    <div className="absolute inset-0 animate-pulse bg-slate-200 rounded-lg" />
-                  )}
-                  <img
-                    src={processedImageUrl}
-                    alt="Dirt detection mask"
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${processedImageLoaded ? "opacity-100" : "opacity-0"}`}
-                    onLoad={() => setProcessedImageLoaded(true)}
-                    onError={() => setProcessedImageLoaded(true)}
-                  />
-                </div>
+                <ImageWithSkeleton key={processedImageUrl} src={processedImageUrl} alt="Dirt detection mask" />
               ) : (
                 <div className="w-full h-48 rounded-lg bg-slate-100 flex flex-col items-center justify-center gap-2">
                   <span className="text-slate-400 text-sm">No processed image</span>
@@ -257,7 +245,6 @@ export default function DirtDetectionPage() {
           </Card>
         </div>
 
-        {/* History table */}
         <Card className="border border-[#e2e8f0] ring-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-[#1e293b]">Detection History</CardTitle>

@@ -42,7 +42,6 @@ export default function LiveCameraPage() {
   return (
     <ErrorBoundary>
     <div className="space-y-5">
-      {/* Status bar */}
       <div className="flex items-center gap-3 flex-wrap">
         {loading ? (
           <Skeleton className="h-6 w-48" />
@@ -84,7 +83,6 @@ export default function LiveCameraPage() {
         )}
       </div>
 
-      {/* Main stream card */}
       <Card className="border border-[#e2e8f0] ring-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-[#1e293b]">
@@ -95,6 +93,7 @@ export default function LiveCameraPage() {
         <CardContent>
           {cameraOnline && piOnline ? (
             <div className="space-y-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- MJPEG stream; next/image does not support multipart/x-mixed-replace */}
               <img
                 src={SOLAR_CONFIG.camera.streamUrl}
                 alt="Live MJPEG stream"
@@ -138,7 +137,6 @@ export default function LiveCameraPage() {
         </CardContent>
       </Card>
 
-      {/* Recent captures placeholder */}
       <Card className="border border-[#e2e8f0] ring-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-[#1e293b]">

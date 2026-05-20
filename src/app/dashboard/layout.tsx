@@ -25,7 +25,6 @@ export default async function DashboardLayout({
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Cannot set cookies from a Server Component
           }
         },
       },

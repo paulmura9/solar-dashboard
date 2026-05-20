@@ -1,3 +1,7 @@
+function devWarn(message: string, ...rest: unknown[]): void {
+  if (process.env.NODE_ENV === "development") console.warn(message, ...rest); // dev: fetch-failure diagnostics
+}
+
 export async function apiFetch<T>(
   path: string,
   token: string,
@@ -13,27 +17,27 @@ export async function apiFetch<T>(
     };
     const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
     if (res.status === 429) {
-      console.warn(`apiFetch ${path}: rate limited`);
+      devWarn(`apiFetch ${path}: rate limited`);
       return null;
     }
     if (res.status === 404) {
-      console.warn(`apiFetch ${path}: not found`);
+      devWarn(`apiFetch ${path}: not found`);
       return null;
     }
     if (res.status === 401) {
-      console.warn("[auth] Token expired or invalid — redirecting to login");
+      devWarn("[auth] Token expired or invalid — redirecting to login");
       if (typeof window !== "undefined") {
         window.location.replace("/login");
       }
       return null;
     }
     if (!res.ok) {
-      console.warn(`apiFetch ${path}: ${res.status} ${res.statusText}`);
+      devWarn(`apiFetch ${path}: ${res.status} ${res.statusText}`);
       return null;
     }
     return (await res.json()) as T;
   } catch (err) {
-    console.warn(`apiFetch ${path}: network unavailable —`, err instanceof Error ? err.message : String(err));
+    devWarn(`apiFetch ${path}: network unavailable —`, err instanceof Error ? err.message : String(err));
     return null;
   }
 }

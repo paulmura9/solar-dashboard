@@ -20,7 +20,6 @@ export default async function SignUpPage() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Cannot set cookies from a Server Component
           }
         },
       },

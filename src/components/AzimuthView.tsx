@@ -13,11 +13,9 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
     <div className="flex flex-col items-center gap-2">
       <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Azimuth</p>
       <svg width="180" height="180" viewBox="0 0 180 180">
-        {/* Outer ring */}
         <circle cx="90" cy="90" r="80" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />
         <circle cx="90" cy="90" r="72" fill="none" stroke="#f1f5f9" strokeWidth="0.5" />
 
-        {/* Intercardinal tick marks */}
         {INTERCARDINAL_TICKS.map((deg) => {
           const rad = (deg * Math.PI) / 180;
           return (
@@ -33,28 +31,22 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
           );
         })}
 
-        {/* Cardinal labels */}
         <text x="90" y="12" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">N</text>
         <text x="90" y="175" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">S</text>
         <text x="170" y="94" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">E</text>
         <text x="10" y="94" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">W</text>
 
-        {/* Rotating arrow group — origin at compass center (90, 90) */}
         <g transform="translate(90, 90)">
           <motion.g
             animate={{ rotate: azimuthAngle }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
           >
-            {/* Arrow shaft */}
             <line x1="0" y1="8" x2="0" y2="-58" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-            {/* Arrowhead */}
             <polygon points="-5,-50 0,-68 5,-50" fill="#3b82f6" />
-            {/* Back stub */}
             <line x1="0" y1="8" x2="0" y2="22" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
           </motion.g>
         </g>
 
-        {/* Center dot */}
         <circle cx="90" cy="90" r="5" fill="#3b82f6" />
         <circle cx="90" cy="90" r="2.5" fill="#ffffff" />
       </svg>

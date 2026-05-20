@@ -11,9 +11,12 @@ export function GoogleSignInButton({ className = "" }: GoogleSignInButtonProps) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset stuck loading state when the user navigates back from Google OAuth.
   useEffect(() => {
-    setLoading(false);
+    function handlePageShow(e: PageTransitionEvent): void {
+      if (e.persisted) setLoading(false);
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
   async function handleClick() {

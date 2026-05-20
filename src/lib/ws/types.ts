@@ -13,15 +13,6 @@ export interface CommandStatusUpdate {
   error_message?: string;
 }
 
-/**
- * All server-pushed event types the dashboard understands.
- *
- * The map below scaffolds the full typed event surface for future consumers
- * (per-hook subscribers seeded directly from payloads). The current page-level
- * code only listens for `telemetry_update` as a refetch trigger.
- *
- * Add a new entry here when introducing a new event type on the backend.
- */
 export type WSEventMap = {
   telemetry_update: SensorReading;
   device_status_update: DeviceStatus;

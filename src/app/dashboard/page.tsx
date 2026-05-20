@@ -114,14 +114,12 @@ export default function OverviewPage() {
         timestamp: Date.now(),
       }));
     } catch {
-      // leave all state as empty/null when backend is unavailable
     } finally {
       setLoading(false);
       hasLoadedRef.current = true;
     }
   }, [token]);
 
-  // Keep ref current so WS/visibility callbacks always use the latest token
   const fetchAllRef = useRef(fetchAll);
   useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
 
@@ -140,11 +138,13 @@ export default function OverviewPage() {
       try {
         const { data, timestamp } = JSON.parse(cached) as { data: CachedDashboard; timestamp: number };
         if (Date.now() - timestamp < CACHE_TTL_MS) {
+          /* eslint-disable react-hooks/set-state-in-effect */
           setLatest(data.latest);
           setHistory(data.history);
           setEvents(data.events);
           setDevices(data.devices);
           setVision(data.vision);
+          /* eslint-enable react-hooks/set-state-in-effect */
         }
       } catch {
         sessionStorage.removeItem(CACHE_KEY);
@@ -180,7 +180,6 @@ export default function OverviewPage() {
     <div className="space-y-5">
       <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
 
-      {/* Device status bar */}
       <ErrorBoundary>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading && devices.length === 0
@@ -214,7 +213,6 @@ export default function OverviewPage() {
       </div>
       </ErrorBoundary>
 
-      {/* Data cards — Solar · Battery · Tracking · LDR · Weather */}
       <ErrorBoundary>
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
         {loading && !latest
@@ -231,7 +229,6 @@ export default function OverviewPage() {
       </div>
       </ErrorBoundary>
 
-      {/* Recent events */}
       <ErrorBoundary>
       <Card>
         <CardHeader>
@@ -274,7 +271,6 @@ export default function OverviewPage() {
       </Card>
       </ErrorBoundary>
 
-      {/* Mini charts */}
       <ErrorBoundary>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>

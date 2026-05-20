@@ -25,8 +25,6 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // getUser() validates the JWT with Supabase; getSession() only reads cookies
-  // and can return stale or forged data.
   const {
     data: { user },
   } = await supabase.auth.getUser();

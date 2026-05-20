@@ -32,7 +32,6 @@ export default function ControlPage() {
   const [latest,  setLatest]  = useState<SensorReading | null>(null);
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   const token = useApiToken();
   const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
@@ -63,9 +62,8 @@ export default function ControlPage() {
   useWSEvent("telemetry_update", handleTelemetryPing);
 
   useEffect(() => {
-    setMounted(true);
-    void fetchLatest();
-  }, [fetchLatest]);
+    void fetchLatestRef.current();
+  }, [token]);
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
 
@@ -96,7 +94,6 @@ export default function ControlPage() {
         </div>
       )}
 
-      {/* Panel visualization */}
       <ErrorBoundary>
       <Card className="relative overflow-hidden">
         <BorderBeam colorFrom="#3b82f6" colorTo="#60a5fa" size={120} duration={8} borderWidth={1.5} />
@@ -121,7 +118,6 @@ export default function ControlPage() {
       </Card>
       </ErrorBoundary>
 
-      {/* Control + Actions */}
       <ErrorBoundary>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <PanelControlCard
@@ -187,7 +183,6 @@ export default function ControlPage() {
       </div>
       </ErrorBoundary>
 
-      {/* Command history */}
       <ErrorBoundary>
       <Card>
         <CardHeader>
@@ -209,13 +204,11 @@ export default function ControlPage() {
               <TableBody>
                 {commands.map((cmd) => (
                   <TableRow key={cmd.id} className="border-[#e2e8f0] text-xs">
-                    <TableCell className="text-[#64748b] tabular-nums">
-                      {mounted
-                        ? new Date(cmd.created_at).toLocaleString("ro-RO", {
-                            day: "2-digit", month: "2-digit",
-                            hour: "2-digit", minute: "2-digit", second: "2-digit",
-                          })
-                        : "—"}
+                    <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
+                      {new Date(cmd.created_at).toLocaleString("ro-RO", {
+                        day: "2-digit", month: "2-digit",
+                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                      })}
                     </TableCell>
                     <TableCell className="font-medium text-[#1e293b]">
                       {getCommandLabel(cmd.command_type)}

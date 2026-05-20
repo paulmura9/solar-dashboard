@@ -63,7 +63,6 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data, ambientLux }) => {
           value={ambientLux != null ? `${ambientLux.toFixed(0)} lux` : "—"}
         />
 
-        {/* Sun schedule */}
         <div className="space-y-1.5">
           {data ? (
             <>
@@ -114,12 +113,10 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data, ambientLux }) => {
           )}
         </div>
 
-        {/* Behavior note */}
         <p className="text-[10px] text-[#64748b] italic leading-relaxed border-t border-[#e2e8f0] pt-2">
           {note}
         </p>
 
-        {/* Timestamp */}
         {data && (
           <div className="flex items-center gap-1 text-[10px] text-[#c0cad8]">
             <Clock size={9} />

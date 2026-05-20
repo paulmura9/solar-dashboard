@@ -18,7 +18,6 @@ export async function getSupabaseServerClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Cannot set cookies from a Server Component
           }
         },
       },

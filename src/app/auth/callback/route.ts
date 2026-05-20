@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Open-redirect protection: only allow same-origin relative paths.
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   if (!code) {
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error("OAuth callback error:", error.message);
+    console.error("OAuth callback error:", error.message); // dev: server-side route, writes to Vercel function logs (not browser)
     return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 

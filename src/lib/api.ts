@@ -17,89 +17,99 @@ import type {
   WeatherData,
 } from "./types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapReading(d: any): SensorReading {
+type RawJson = Record<string, unknown>;
+
+function pick<T>(o: RawJson, camel: string, snake: string): T {
+  return (o[camel] ?? o[snake]) as T;
+}
+
+function asRecord(d: unknown): RawJson {
+  return (d !== null && typeof d === "object" ? d : {}) as RawJson;
+}
+
+function mapReading(d: unknown): SensorReading {
+  const o = asRecord(d);
   return {
-    id: d.id,
-    timestamp: d.timestamp,
-    horizontal_angle:             d.horizontalAngle             ?? d.horizontal_angle,
-    vertical_angle:               d.verticalAngle               ?? d.vertical_angle,
-    tracking_mode:                d.trackingMode                ?? d.tracking_mode,
-    is_moving:                    d.isMoving                    ?? d.is_moving,
-    ldr_top_left:                 d.ldrTopLeft                  ?? d.ldr_top_left,
-    ldr_top_right:                d.ldrTopRight                 ?? d.ldr_top_right,
-    ldr_bottom_left:              d.ldrBottomLeft               ?? d.ldr_bottom_left,
-    ldr_bottom_right:             d.ldrBottomRight              ?? d.ldr_bottom_right,
-    horizontal_light_difference:  d.horizontalLightDifference   ?? d.horizontal_light_difference,
-    vertical_light_difference:    d.verticalLightDifference     ?? d.vertical_light_difference,
-    battery_voltage:              d.batteryVoltage              ?? d.battery_voltage,
-    battery_percent:              d.batteryPercent              ?? d.battery_percent,
-    battery_status:               d.batteryStatus               ?? d.battery_status,
-    solar_voltage:                d.solarVoltage                ?? d.solar_voltage,
-    solar_current:                d.solarCurrent                ?? d.solar_current,
-    solar_power:                  d.solarPower                  ?? d.solar_power,
-    solar_energy_today_wh:        d.solarEnergyTodayWh          ?? d.solar_energy_today_wh,
-    charging_voltage:             d.chargingVoltage             ?? d.charging_voltage,
-    charging_current:             d.chargingCurrent             ?? d.charging_current,
-    charging_power:               d.chargingPower               ?? d.charging_power,
-    charged_energy_today_wh:      d.chargedEnergyTodayWh        ?? d.charged_energy_today_wh,
-    ambient_light_lux:            d.ambientLightLux             ?? d.ambient_light_lux,
-    created_at:                   d.createdAt                   ?? d.created_at,
+    id:                          o.id as number,
+    timestamp:                   o.timestamp as string,
+    horizontal_angle:            pick<number>(o, "horizontalAngle", "horizontal_angle"),
+    vertical_angle:              pick<number>(o, "verticalAngle", "vertical_angle"),
+    tracking_mode:               pick(o, "trackingMode", "tracking_mode"),
+    is_moving:                   pick<boolean>(o, "isMoving", "is_moving"),
+    ldr_top_left:                pick<number | null>(o, "ldrTopLeft", "ldr_top_left"),
+    ldr_top_right:               pick<number | null>(o, "ldrTopRight", "ldr_top_right"),
+    ldr_bottom_left:             pick<number | null>(o, "ldrBottomLeft", "ldr_bottom_left"),
+    ldr_bottom_right:            pick<number | null>(o, "ldrBottomRight", "ldr_bottom_right"),
+    horizontal_light_difference: pick<number | null>(o, "horizontalLightDifference", "horizontal_light_difference"),
+    vertical_light_difference:   pick<number | null>(o, "verticalLightDifference", "vertical_light_difference"),
+    battery_voltage:             pick<number | null>(o, "batteryVoltage", "battery_voltage"),
+    battery_percent:             pick<number | null>(o, "batteryPercent", "battery_percent"),
+    battery_status:              pick(o, "batteryStatus", "battery_status"),
+    solar_voltage:               pick<number | null>(o, "solarVoltage", "solar_voltage"),
+    solar_current:               pick<number | null>(o, "solarCurrent", "solar_current"),
+    solar_power:                 pick<number | null>(o, "solarPower", "solar_power"),
+    solar_energy_today_wh:       pick<number | null>(o, "solarEnergyTodayWh", "solar_energy_today_wh"),
+    charging_voltage:            pick<number | null>(o, "chargingVoltage", "charging_voltage"),
+    charging_current:            pick<number | null>(o, "chargingCurrent", "charging_current"),
+    charging_power:              pick<number | null>(o, "chargingPower", "charging_power"),
+    charged_energy_today_wh:     pick<number | null>(o, "chargedEnergyTodayWh", "charged_energy_today_wh"),
+    ambient_light_lux:           pick<number | null>(o, "ambientLightLux", "ambient_light_lux"),
+    created_at:                  pick<string>(o, "createdAt", "created_at"),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapVision(d: any): VisionResult {
+function mapVision(d: unknown): VisionResult {
+  const o = asRecord(d);
   return {
-    id: d.id,
-    timestamp: d.timestamp,
-    dirt_level_percent:    d.dirtLevelPercent    ?? d.dirt_level_percent,
-    cleanliness_percent:   d.cleanlinessPercent  ?? d.cleanliness_percent,
-    cleaning_required:     d.cleaningRequired    ?? d.cleaning_required,
-    confidence:            d.confidence,
-    image_path:            d.imagePath           ?? d.image_path,
-    processed_image_path:  d.processedImagePath  ?? d.processed_image_path,
-    created_at:            d.createdAt           ?? d.created_at,
+    id:                   o.id as number,
+    timestamp:            o.timestamp as string,
+    dirt_level_percent:   pick<number>(o, "dirtLevelPercent", "dirt_level_percent"),
+    cleanliness_percent:  pick<number>(o, "cleanlinessPercent", "cleanliness_percent"),
+    cleaning_required:    pick<boolean>(o, "cleaningRequired", "cleaning_required"),
+    confidence:           o.confidence as number | null,
+    image_path:           pick<string | null>(o, "imagePath", "image_path"),
+    processed_image_path: pick<string | null>(o, "processedImagePath", "processed_image_path"),
+    created_at:           pick<string>(o, "createdAt", "created_at"),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapEvent(d: any): SystemEvent {
+function mapEvent(d: unknown): SystemEvent {
+  const o = asRecord(d);
   return {
-    id: d.id,
-    timestamp: d.timestamp,
-    event_type:  d.eventType  ?? d.event_type,
-    severity:    d.severity,
-    message:     d.message,
-    created_at:  d.createdAt  ?? d.created_at,
+    id:         o.id as number,
+    timestamp:  o.timestamp as string,
+    event_type: pick<string>(o, "eventType", "event_type"),
+    severity:   o.severity as SystemEvent["severity"],
+    message:    o.message as string,
+    created_at: pick<string>(o, "createdAt", "created_at"),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDevice(d: any): DeviceStatus {
+function mapDevice(d: unknown): DeviceStatus {
+  const o = asRecord(d);
   return {
-    id: d.id,
-    device_name:      d.deviceName      ?? d.device_name,
-    is_online:        d.isOnline        ?? d.is_online,
-    last_seen:        d.lastSeen        ?? d.last_seen,
-    firmware_version: d.firmwareVersion ?? d.firmware_version,
-    status_message:   d.statusMessage   ?? d.status_message,
-    updated_at:       d.updatedAt       ?? d.updated_at,
+    id:               o.id as number,
+    device_name:      pick<string>(o, "deviceName", "device_name"),
+    is_online:        pick<boolean>(o, "isOnline", "is_online"),
+    last_seen:        pick<string | null>(o, "lastSeen", "last_seen"),
+    firmware_version: pick<string | null>(o, "firmwareVersion", "firmware_version"),
+    status_message:   pick<string | null>(o, "statusMessage", "status_message"),
+    updated_at:       pick<string>(o, "updatedAt", "updated_at"),
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapCommand(d: any): DeviceCommand {
+function mapCommand(d: unknown): DeviceCommand {
+  const o = asRecord(d);
   return {
-    id: d.id,
-    command_type:    d.commandType    ?? d.command_type,
-    payload:         d.payload,
-    status:          d.status,
-    error_message:   d.errorMessage   ?? d.error_message,
-    ack_payload:     d.ackPayload     ?? d.ack_payload,
-    created_at:      d.createdAt      ?? d.created_at,
-    sent_at:         d.sentAt         ?? d.sent_at,
-    acknowledged_at: d.acknowledgedAt ?? d.acknowledged_at,
+    id:              o.id as string,
+    command_type:    pick(o, "commandType", "command_type"),
+    payload:         (o.payload ?? {}) as Record<string, unknown>,
+    status:          o.status as DeviceCommand["status"],
+    error_message:   pick<string | null>(o, "errorMessage", "error_message"),
+    ack_payload:     (pick(o, "ackPayload", "ack_payload") ?? {}) as Record<string, unknown>,
+    created_at:      pick<string>(o, "createdAt", "created_at"),
+    sent_at:         pick<string | null>(o, "sentAt", "sent_at"),
+    acknowledged_at: pick<string | null>(o, "acknowledgedAt", "acknowledged_at"),
   };
 }
 
@@ -203,7 +213,7 @@ export async function getSunToday(): Promise<WeatherData | null> {
       efficiencyWarning:        getEfficiencyWarning(cur.cloud_cover, cur.precipitation_probability),
     };
   } catch (err) {
-    console.error("getSunToday:", err);
+    if (process.env.NODE_ENV === "development") console.error("getSunToday:", err); // dev: surfaces Open-Meteo upstream issues
     return null;
   }
 }
@@ -218,7 +228,7 @@ export async function getSignedImageUrl(path: string): Promise<string | null> {
     .createSignedUrl(path, SOLAR_CONFIG.storage.signedUrlTtlSeconds);
 
   if (error || !data?.signedUrl) {
-    console.debug("[storage] No signed URL for path:", path);
+    if (process.env.NODE_ENV === "development") console.debug("[storage] No signed URL for path:", path); // dev: non-fatal missing image path
     return null;
   }
 

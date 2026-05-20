@@ -41,7 +41,6 @@ export default function AnalyticsPage() {
   const [hours,    setHours]   = useState(24);
   const [readings, setReadings] = useState<SensorReading[]>([]);
   const [loading,  setLoading]  = useState(true);
-  const [mounted,  setMounted]  = useState(false);
 
   const token = useApiToken();
 
@@ -55,10 +54,6 @@ export default function AnalyticsPage() {
     setReadings(Array.isArray(data) ? data : []);
     setLoading(false);
   }, [token]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const id = setTimeout(() => { void fetchData(hours); }, 0);
@@ -79,12 +74,9 @@ export default function AnalyticsPage() {
   }, {});
   const energyData = Object.entries(energyByDay).map(([date, wh]) => ({ date, wh }));
 
-  if (!mounted) return null;
-
   return (
     <ErrorBoundary>
       <div className="space-y-5">
-        {/* Time range selector */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-[#64748b] mr-1">Time range:</span>
           {RANGES.map(({ label, hours: h }) => (

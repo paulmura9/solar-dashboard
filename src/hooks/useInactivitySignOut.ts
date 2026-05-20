@@ -7,13 +7,11 @@ const INACTIVITY_MS = 8 * 60 * 60 * 1000;
 const LAST_ACTIVITY_KEY = "lighttrack_last_activity";
 
 export function useInactivitySignOut() {
-  const supabase = getSupabaseBrowserClient();
-
   useEffect(() => {
     const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
     if (stored && Date.now() - parseInt(stored, 10) > INACTIVITY_MS) {
       sessionStorage.clear();
-      supabase.auth.signOut().then(() => {
+      getSupabaseBrowserClient().auth.signOut().then(() => {
         window.location.replace("/login");
       });
       return;

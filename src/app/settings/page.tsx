@@ -60,7 +60,6 @@ export default function SettingsPage() {
   return (
     <ErrorBoundary>
     <div className="space-y-5 max-w-3xl">
-      {/* Connected services */}
       <Card className="border border-[#e2e8f0] ring-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-[#1e293b]">Connected Services</CardTitle>
@@ -111,7 +110,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Device status */}
       <Card className="border border-[#e2e8f0] ring-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-[#1e293b]">Device Status</CardTitle>
@@ -172,7 +170,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Project info */}
       <Card className="border border-[#e2e8f0] ring-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-[#1e293b]">Project Info</CardTitle>

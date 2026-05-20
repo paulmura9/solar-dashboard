@@ -9,13 +9,10 @@ type EventHandler<T = unknown> = (payload: T) => void;
 type Unsubscribe = () => void;
 
 export interface DashboardWSClientConfig {
-  /** Full URL to the client WebSocket endpoint (wss://...). */
   url: string;
-  /** Returns a fresh JWT or null if unauthenticated. */
   getToken: () => Promise<string | null>;
-  /** Called on every connection state transition. */
   onConnectionChange?: (connected: boolean) => void;
-  /** Diagnostic sink. The client itself never touches console. */
+  onResync?: (lastMessageAt: Date) => Promise<void>;
   onLog?: (
     level: "info" | "warn" | "error",
     event: string,
@@ -37,27 +34,18 @@ function isMessageEnvelope(value: unknown): value is MessageEnvelope {
   );
 }
 
-/**
- * Persistent WebSocket client for the dashboard.
- *
- * Responsibilities:
- *  - Open WSS connection to Express with JWT in subprotocol
- *  - Auto-reconnect with exponential backoff + jitter
- *  - Refresh JWT periodically and send `reauth` on the live connection
- *  - Dispatch incoming server-pushed events to subscribers
- */
 export class DashboardWSClient {
   private ws: WebSocket | null = null;
   private currentBackoffMs: number = WS_RECONNECT_MIN_DELAY_MS;
   private reconnectTimer: number | null = null;
   private reauthTimer: number | null = null;
+  private lastMessageAt: Date = new Date(0);
   private readonly listeners: Map<string, Set<EventHandler>> = new Map();
   private explicitlyClosed: boolean = false;
   private isConnecting: boolean = false;
 
   constructor(private readonly config: DashboardWSClientConfig) {}
 
-  /** Idempotent: returns early if already connected or connecting. */
   async connect(): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) return;
     if (this.isConnecting) return;
@@ -73,10 +61,6 @@ export class DashboardWSClient {
     }
 
     try {
-      // JWT travels in the WebSocket subprotocol, not the URL query string,
-      // so it doesn't end up in browser history, Referer headers, or server
-      // access logs. The server must accept the `access_token` subprotocol
-      // and treat the second value as the bearer token.
       this.ws = new WebSocket(this.config.url, ["access_token", token]);
     } catch (err) {
       this.log("error", "ws_construct_failed", { error: String(err) });
@@ -87,17 +71,15 @@ export class DashboardWSClient {
 
     this.ws.onopen = (): void => {
       this.isConnecting = false;
-      this.handleOpen();
+      void this.handleOpen();
     };
     this.ws.onmessage = (evt: MessageEvent): void => this.handleMessage(evt);
     this.ws.onclose = (evt: CloseEvent): void => this.handleClose(evt);
     this.ws.onerror = (): void => {
-      // Browser `error` events carry no detail; the real signal arrives via `close`.
       this.log("warn", "ws_error_event");
     };
   }
 
-  /** Close deliberately and stop the reconnect loop. */
   disconnect(): void {
     this.explicitlyClosed = true;
     this.clearTimers();
@@ -111,10 +93,6 @@ export class DashboardWSClient {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
-  /**
-   * Subscribe to a server-pushed event by type.
-   * Returns an unsubscribe function that callers MUST invoke on cleanup.
-   */
   on<T = unknown>(type: string, handler: EventHandler<T>): Unsubscribe {
     let set = this.listeners.get(type);
     if (set === undefined) {
@@ -131,7 +109,6 @@ export class DashboardWSClient {
     };
   }
 
-  /** Returns true if the message was dispatched, false if the socket is closed. */
   send(message: unknown): boolean {
     if (this.ws?.readyState !== WebSocket.OPEN) return false;
     try {
@@ -143,13 +120,19 @@ export class DashboardWSClient {
     }
   }
 
-  // ----- private -----
-
-  private handleOpen(): void {
+  private async handleOpen(): Promise<void> {
     this.log("info", "ws_connected");
     this.currentBackoffMs = WS_RECONNECT_MIN_DELAY_MS;
     this.config.onConnectionChange?.(true);
     this.scheduleReauth();
+
+    if (this.lastMessageAt.getTime() > 0 && this.config.onResync !== undefined) {
+      try {
+        await this.config.onResync(this.lastMessageAt);
+      } catch (err) {
+        this.log("error", "ws_resync_failed", { error: String(err) });
+      }
+    }
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -171,6 +154,7 @@ export class DashboardWSClient {
       return;
     }
 
+    this.lastMessageAt = new Date();
     this.emit(parsed.type, parsed.payload);
   }
 

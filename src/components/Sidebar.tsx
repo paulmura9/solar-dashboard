@@ -62,7 +62,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Desktop sidebar — fixed left */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-[220px] flex-col border-r border-[#e2e8f0] bg-white z-40">
         <div className="flex items-center gap-2.5 px-4 py-4 border-b border-[#e2e8f0]">
           <SolarLogo />
@@ -92,7 +91,6 @@ export default function Sidebar() {
         </nav>
       </aside>
 
-      {/* Mobile bottom navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] z-40 flex" suppressHydrationWarning>
         {NAV_LINKS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
