@@ -22,7 +22,7 @@ function asRecord(d: unknown): RawJson {
   return (d !== null && typeof d === "object" ? d : {}) as RawJson;
 }
 
-function mapReading(d: unknown): SensorReading {
+export function mapReading(d: unknown): SensorReading {
   const o = asRecord(d);
   return {
     id:                          o.id as number,
@@ -53,7 +53,7 @@ function mapReading(d: unknown): SensorReading {
   };
 }
 
-function mapVision(d: unknown): VisionResult {
+export function mapVision(d: unknown): VisionResult {
   const o = asRecord(d);
   return {
     id:                   o.id as number,
@@ -68,7 +68,7 @@ function mapVision(d: unknown): VisionResult {
   };
 }
 
-function mapEvent(d: unknown): SystemEvent {
+export function mapEvent(d: unknown): SystemEvent {
   const o = asRecord(d);
   return {
     id:         o.id as number,
@@ -80,7 +80,7 @@ function mapEvent(d: unknown): SystemEvent {
   };
 }
 
-function mapDevice(d: unknown): DeviceStatus {
+export function mapDevice(d: unknown): DeviceStatus {
   const o = asRecord(d);
   return {
     id:               o.id as number,

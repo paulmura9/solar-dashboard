@@ -10,7 +10,9 @@ interface TrackingStatusCardProps {
   vision: VisionResult | null;
 }
 
-const MODE_STYLES: Record<PanelMode, { color: string; bg: string; border: string }> = {
+interface ModeStyle { color: string; bg: string; border: string }
+
+const MODE_STYLES: Record<PanelMode, ModeStyle> = {
   TRACKING: { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
   MANUAL:   { color: "#92400e", bg: "#fffbeb", border: "#fcd34d" },
   IDLE:     { color: "#475569", bg: "#f8fafc", border: "#e2e8f0" },
@@ -20,7 +22,7 @@ const MODE_STYLES: Record<PanelMode, { color: string; bg: string; border: string
 
 const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
   const mode: PanelMode = data?.mode ?? "IDLE";
-  const s = MODE_STYLES[mode];
+  const s: ModeStyle = MODE_STYLES[mode] ?? MODE_STYLES.IDLE;
 
   return (
     <Card>

@@ -16,7 +16,7 @@ import {
 import { useApiToken } from "@/hooks/useApiToken";
 import { useWSEvent } from "@/hooks/useWSEvent";
 import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
-import { getLatestVision, getVisionHistory, getSignedImageUrl } from "@/lib/api";
+import { getLatestVision, getVisionHistory, getSignedImageUrl, mapVision } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { dirtColor } from "@/lib/solar/status";
 import { formatPower } from "@/lib/solar/energy";
@@ -107,7 +107,8 @@ export default function DirtDetectionPage() {
     void fetchDataRef.current();
   }, [token]);
 
-  const handleVision = useCallback((update: VisionResult): void => {
+  const handleVision = useCallback((raw: unknown): void => {
+    const update = mapVision(raw);
     setLatest(update);
     setHistory((prev) => [update, ...prev].slice(0, 50));
     void (async (): Promise<void> => {

@@ -9,7 +9,7 @@ import { ShimmerButton } from "@/components/magic/ShimmerButton";
 import { useApiToken } from "@/hooks/useApiToken";
 import { useWSEvent } from "@/hooks/useWSEvent";
 import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
-import { getDevices } from "@/lib/api";
+import { getDevices, mapDevice } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import type { DeviceStatus } from "@/lib/types";
@@ -37,7 +37,8 @@ export default function LiveCameraPage() {
     void fetchDataRef.current();
   }, [token]);
 
-  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+  const handleDeviceStatus = useCallback((raw: unknown): void => {
+    const update = mapDevice(raw);
     setDevices((prev) => {
       const idx = prev.findIndex((d) => d.device_name === update.device_name);
       if (idx === -1) return [...prev, update];

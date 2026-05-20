@@ -21,7 +21,9 @@ function getBatteryColor(pct: number | null): string {
   return "#ef4444";
 }
 
-const STATUS_STYLES: Record<BatteryStatus, { bg: string; color: string; border: string }> = {
+interface StatusStyle { bg: string; color: string; border: string }
+
+const STATUS_STYLES: Record<BatteryStatus, StatusStyle> = {
   CHARGING:    { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
   DISCHARGING: { bg: "#eff6ff", color: "#1e40af", border: "#bfdbfe" },
   IDLE:        { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
@@ -41,7 +43,7 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r }) => {
   const pct = r?.battery_percent ?? null;
   const status = r?.battery_status ?? null;
   const color = getBatteryColor(pct);
-  const ss = status ? STATUS_STYLES[status] : STATUS_STYLES.UNKNOWN;
+  const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? STATUS_STYLES.UNKNOWN;
 
   return (
     <Card>

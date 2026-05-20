@@ -17,7 +17,7 @@ import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
 import { useWSEvent } from "@/hooks/useWSEvent";
 import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import StaleDataBanner from "@/components/StaleDataBanner";
-import { getLatestReading, getDevices } from "@/lib/api";
+import { getLatestReading, getDevices, mapReading, mapDevice } from "@/lib/api";
 import { getCommandLabel } from "@/lib/solar/commands";
 import type { SensorReading, CommandStatus, DeviceStatus } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -57,12 +57,13 @@ export default function ControlPage() {
   const fetchLatestRef = useRef(fetchLatest);
   useEffect(() => { fetchLatestRef.current = fetchLatest; }, [fetchLatest]);
 
-  const handleTelemetry = useCallback((reading: SensorReading): void => {
-    setLatest(reading);
+  const handleTelemetry = useCallback((raw: unknown): void => {
+    setLatest(mapReading(raw));
   }, []);
   useWSEvent("telemetry_update", handleTelemetry);
 
-  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+  const handleDeviceStatus = useCallback((raw: unknown): void => {
+    const update = mapDevice(raw);
     setDevices((prev) => {
       const idx = prev.findIndex((d) => d.device_name === update.device_name);
       if (idx === -1) return [...prev, update];

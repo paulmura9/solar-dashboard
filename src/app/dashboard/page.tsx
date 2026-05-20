@@ -18,7 +18,10 @@ import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
 import { useWSEvent } from "@/hooks/useWSEvent";
 import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import StaleDataBanner from "@/components/StaleDataBanner";
-import { getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision } from "@/lib/api";
+import {
+  getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision,
+  mapReading, mapDevice, mapVision, mapEvent,
+} from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { downsample } from "@/lib/solar/chart";
 import SolarProductionCard from "@/components/dashboard/SolarProductionCard";
@@ -126,7 +129,8 @@ export default function OverviewPage() {
   const fetchAllRef = useRef(fetchAll);
   useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
 
-  const handleTelemetry = useCallback((reading: SensorReading): void => {
+  const handleTelemetry = useCallback((raw: unknown): void => {
+    const reading = mapReading(raw);
     setLatest(reading);
     setHistory((prev) => {
       const next = prev.length > 0 && prev[prev.length - 1].id === reading.id
@@ -137,7 +141,8 @@ export default function OverviewPage() {
   }, []);
   useWSEvent("telemetry_update", handleTelemetry);
 
-  const handleDeviceStatus = useCallback((update: DeviceStatus): void => {
+  const handleDeviceStatus = useCallback((raw: unknown): void => {
+    const update = mapDevice(raw);
     setDevices((prev) => {
       const idx = prev.findIndex((d) => d.device_name === update.device_name);
       if (idx === -1) return [...prev, update];
@@ -148,12 +153,13 @@ export default function OverviewPage() {
   }, []);
   useWSEvent("device_status_update", handleDeviceStatus);
 
-  const handleVision = useCallback((update: VisionResult): void => {
-    setVision(update);
+  const handleVision = useCallback((raw: unknown): void => {
+    setVision(mapVision(raw));
   }, []);
   useWSEvent("vision_update", handleVision);
 
-  const handleEvent = useCallback((event: SystemEvent): void => {
+  const handleEvent = useCallback((raw: unknown): void => {
+    const event = mapEvent(raw);
     setEvents((prev) => [event, ...prev].slice(0, EVENTS_CAP));
   }, []);
   useWSEvent("event_notification", handleEvent);

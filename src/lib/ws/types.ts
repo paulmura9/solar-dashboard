@@ -1,10 +1,4 @@
-import type {
-  SensorReading,
-  DeviceStatus,
-  VisionResult,
-  SystemEvent,
-  CommandStatus,
-} from "@/lib/types";
+import type { CommandStatus } from "@/lib/types";
 
 export interface CommandStatusUpdate {
   commandId: string;
@@ -14,11 +8,11 @@ export interface CommandStatusUpdate {
 }
 
 export type WSEventMap = {
-  telemetry_update: SensorReading;
-  device_status_update: DeviceStatus;
+  telemetry_update: unknown;
+  device_status_update: unknown;
   command_status_update: CommandStatusUpdate;
-  vision_update: VisionResult;
-  event_notification: SystemEvent;
+  vision_update: unknown;
+  event_notification: unknown;
   reauth_ok: Record<string, never>;
   server_shutting_down: Record<string, never>;
 };
