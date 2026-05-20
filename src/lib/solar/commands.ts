@@ -17,10 +17,6 @@ export function buildMovePanelPayload(
   return { horizontal_angle: h, vertical_angle: v };
 }
 
-export function buildSetModePayload(mode: string): Record<string, unknown> {
-  return { mode };
-}
-
 export function getCommandLabel(commandType: CommandType): string {
   switch (commandType) {
     case "SET_MODE":       return "Set Mode";

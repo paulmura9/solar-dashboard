@@ -12,7 +12,6 @@ export interface DashboardWSClientConfig {
   url: string;
   getToken: () => Promise<string | null>;
   onConnectionChange?: (connected: boolean) => void;
-  onResync?: (lastMessageAt: Date) => Promise<void>;
   onLog?: (
     level: "info" | "warn" | "error",
     event: string,
@@ -39,7 +38,6 @@ export class DashboardWSClient {
   private currentBackoffMs: number = WS_RECONNECT_MIN_DELAY_MS;
   private reconnectTimer: number | null = null;
   private reauthTimer: number | null = null;
-  private lastMessageAt: Date = new Date(0);
   private readonly listeners: Map<string, Set<EventHandler>> = new Map();
   private explicitlyClosed: boolean = false;
   private isConnecting: boolean = false;
@@ -71,7 +69,7 @@ export class DashboardWSClient {
 
     this.ws.onopen = (): void => {
       this.isConnecting = false;
-      void this.handleOpen();
+      this.handleOpen();
     };
     this.ws.onmessage = (evt: MessageEvent): void => this.handleMessage(evt);
     this.ws.onclose = (evt: CloseEvent): void => this.handleClose(evt);
@@ -120,19 +118,11 @@ export class DashboardWSClient {
     }
   }
 
-  private async handleOpen(): Promise<void> {
+  private handleOpen(): void {
     this.log("info", "ws_connected");
     this.currentBackoffMs = WS_RECONNECT_MIN_DELAY_MS;
     this.config.onConnectionChange?.(true);
     this.scheduleReauth();
-
-    if (this.lastMessageAt.getTime() > 0 && this.config.onResync !== undefined) {
-      try {
-        await this.config.onResync(this.lastMessageAt);
-      } catch (err) {
-        this.log("error", "ws_resync_failed", { error: String(err) });
-      }
-    }
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -154,7 +144,6 @@ export class DashboardWSClient {
       return;
     }
 
-    this.lastMessageAt = new Date();
     this.emit(parsed.type, parsed.payload);
   }
 

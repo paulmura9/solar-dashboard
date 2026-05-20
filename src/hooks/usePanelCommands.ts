@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createCommand } from "@/lib/api";
-import { buildMovePanelPayload, buildSetModePayload } from "@/lib/solar/commands";
+import { buildMovePanelPayload } from "@/lib/solar/commands";
 import type { CommandType, CommandDirection } from "@/lib/types";
 
 const COOLDOWN_COMMANDS = new Set<CommandType>(["MOVE_PANEL", "RESET_POSITION"]);
@@ -79,7 +79,7 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
     [dispatch]
   );
 
-  const setMode       = useCallback((mode: string) => dispatch("SET_MODE", buildSetModePayload(mode)), [dispatch]);
+  const setMode       = useCallback((mode: string) => dispatch("SET_MODE", { mode }), [dispatch]);
   const resetPosition = useCallback(() => dispatch("RESET_POSITION"), [dispatch]);
   const startTracking = useCallback(() => dispatch("START_TRACKING"),  [dispatch]);
   const stopTracking  = useCallback(() => dispatch("STOP_TRACKING"),   [dispatch]);

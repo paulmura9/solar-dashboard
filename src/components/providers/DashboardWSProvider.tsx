@@ -44,7 +44,6 @@ export function DashboardWSProvider({
       onConnectionChange: (connected: boolean): void => {
         setIsConnected(connected);
       },
-      onResync: refetchAfterReconnect,
       onLog: (level, event, data): void => {
         if (process.env.NODE_ENV === "development") {
           console[level](`[ws] ${event}`, data ?? ""); // dev: WS diagnostic sink, dev-only
@@ -70,16 +69,4 @@ export function DashboardWSProvider({
 
 export function useDashboardWS(): DashboardWSContextValue {
   return useContext(DashboardWSContext);
-}
-
-async function refetchAfterReconnect(since: Date): Promise<void> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-  if (apiUrl === undefined || apiUrl.length === 0) return;
-
-  const sinceIso = since.toISOString();
-  await Promise.allSettled([
-    fetch(`${apiUrl}/api/readings/latest`, { credentials: "include" }),
-    fetch(`${apiUrl}/api/events?since=${encodeURIComponent(sinceIso)}`, { credentials: "include" }),
-    fetch(`${apiUrl}/api/commands?since=${encodeURIComponent(sinceIso)}`, { credentials: "include" }),
-  ]);
 }

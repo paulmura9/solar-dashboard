@@ -91,16 +91,10 @@ export interface LightSensorData {
 }
 
 export interface WeatherData {
-  cloudCoverPercent: number;
-  rainProbabilityPercent: number;
-  temperatureC: number;
-  weatherCode: number;
   weatherStatus: WeatherStatus;
   sunrise: string;
   sunset: string;
   solarNoon: string;
-  isDaytime: boolean;
-  efficiencyWarning: string | null;
 }
 
 export interface PanelStatusData {
@@ -109,36 +103,4 @@ export interface PanelStatusData {
   verticalAngle: number;
   isMoving: boolean;
   lightSensors: LightSensorData;
-}
-
-export interface Database {
-  public: {
-    Tables: {
-      sensor_readings: {
-        Row: SensorReading;
-        Insert: Partial<SensorReading>;
-        Update: Partial<SensorReading>;
-      };
-      vision_results: {
-        Row: VisionResult;
-        Insert: Partial<VisionResult>;
-        Update: Partial<VisionResult>;
-      };
-      system_events: {
-        Row: SystemEvent;
-        Insert: Partial<SystemEvent>;
-        Update: Partial<SystemEvent>;
-      };
-      device_status: {
-        Row: DeviceStatus;
-        Insert: Partial<DeviceStatus>;
-        Update: Partial<DeviceStatus>;
-      };
-      device_commands: {
-        Row: DeviceCommand;
-        Insert: Partial<DeviceCommand>;
-        Update: Partial<DeviceCommand>;
-      };
-    };
-  };
 }

@@ -26,17 +26,12 @@ export const SOLAR_CONFIG = {
     balanceDeadband: 50,
   },
   battery: {
-    emptyVoltage: 6.6,
-    fullVoltage: 8.4,
-    lowPercent: 20,
-    warningPercent: 40,
     goodPercent: 70,
     lowColorPercent: 30,
   },
   dirt: {
     cleanThreshold: 20,
     warningThreshold: 50,
-    cleaningRequiredThreshold: 35,
   },
   chart: {
     downsampleDashboard: 60,
@@ -47,7 +42,6 @@ export const SOLAR_CONFIG = {
   },
   weather: {
     cloudCoverWarningPercent: 60,
-    rainProbabilityWarningPercent: 40,
     locationLat,
     locationLon,
     timezone: "Europe/Bucharest",
@@ -61,8 +55,6 @@ export const SOLAR_CONFIG = {
     maxLossFactor: 0.85,
   },
   refresh: {
-    telemetryMs: 30_000,
-    controlMs: 10_000,
     weatherMs: 600_000,
   },
   camera: {

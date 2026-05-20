@@ -1,12 +1,7 @@
 import { SOLAR_CONFIG } from "@/config/solarConfig";
-import {
-  getWeatherStatus,
-  getEfficiencyWarning,
-  computeSolarNoon,
-  isDaytime as checkDaytime,
-} from "@/lib/solar/weather";
-import { apiFetch } from "./backendClient";
+import { getWeatherStatus, computeSolarNoon } from "@/lib/solar/weather";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { apiFetch } from "./backendClient";
 import type {
   SensorReading,
   VisionResult,
@@ -115,8 +110,6 @@ function mapCommand(d: unknown): DeviceCommand {
 
 interface ApiResponse<T> {
   data: T;
-  timestamp: string;
-  total?: number;
 }
 
 export async function getLatestReading(token: string): Promise<SensorReading | null> {
@@ -188,29 +181,23 @@ export async function getSunToday(): Promise<WeatherData | null> {
     const url =
       `https://api.open-meteo.com/v1/forecast` +
       `?latitude=${lat}&longitude=${lon}` +
-      `&current=cloud_cover,precipitation_probability,temperature_2m,weather_code,is_day` +
+      `&current=cloud_cover,weather_code` +
       `&daily=sunrise,sunset` +
       `&timezone=${encodeURIComponent(timezone)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
     const json = await res.json() as {
-      current: { cloud_cover: number; precipitation_probability: number; temperature_2m: number; weather_code: number };
+      current: { cloud_cover: number; weather_code: number };
       daily:   { sunrise: string[]; sunset: string[] };
     };
     const cur     = json.current;
     const sunrise = json.daily.sunrise[0];
     const sunset  = json.daily.sunset[0];
     return {
-      cloudCoverPercent:        cur.cloud_cover,
-      rainProbabilityPercent:   cur.precipitation_probability,
-      temperatureC:             cur.temperature_2m,
-      weatherCode:              cur.weather_code,
-      weatherStatus:            getWeatherStatus(cur.weather_code, cur.cloud_cover),
+      weatherStatus: getWeatherStatus(cur.weather_code, cur.cloud_cover),
       sunrise,
       sunset,
-      solarNoon:                computeSolarNoon(sunrise, sunset),
-      isDaytime:                checkDaytime(sunrise, sunset),
-      efficiencyWarning:        getEfficiencyWarning(cur.cloud_cover, cur.precipitation_probability),
+      solarNoon:     computeSolarNoon(sunrise, sunset),
     };
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.error("getSunToday:", err); // dev: surfaces Open-Meteo upstream issues
