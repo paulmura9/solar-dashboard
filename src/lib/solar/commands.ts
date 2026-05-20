@@ -1,11 +1,16 @@
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import type { CommandType, CommandDirection } from "@/lib/types";
 
+export interface MovePanelTarget {
+  horizontal_angle: number;
+  vertical_angle: number;
+}
+
 export function buildMovePanelPayload(
   direction: CommandDirection,
   currentH: number,
   currentV: number
-): Record<string, unknown> {
+): MovePanelTarget {
   const step = SOLAR_CONFIG.panel.stepAngle;
   const { minAngle, maxAngle } = SOLAR_CONFIG.panel;
   let h = currentH;

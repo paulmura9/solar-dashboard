@@ -19,8 +19,15 @@ import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getDevices, mapReading, mapDevice } from "@/lib/api";
 import { getCommandLabel } from "@/lib/solar/commands";
-import type { SensorReading, CommandStatus, DeviceStatus } from "@/lib/types";
+import type { SensorReading, CommandStatus, DeviceStatus, CommandDirection } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+const OPTIMISTIC_REVERT_MS = 3_000;
+
+interface OptimisticTarget {
+  h: number;
+  v: number;
+}
 
 const STATUS_STYLE: Record<CommandStatus, React.CSSProperties> = {
   PENDING:      { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
@@ -33,6 +40,20 @@ export default function ControlPage() {
   const [latest,  setLatest]  = useState<SensorReading | null>(null);
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [optimisticTarget, setOptimisticTarget] = useState<OptimisticTarget | null>(null);
+  const optimisticRevertRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (optimisticRevertRef.current) clearTimeout(optimisticRevertRef.current);
+  }, []);
+
+  const clearOptimistic = useCallback(() => {
+    if (optimisticRevertRef.current) {
+      clearTimeout(optimisticRevertRef.current);
+      optimisticRevertRef.current = null;
+    }
+    setOptimisticTarget(null);
+  }, []);
 
   const token = useApiToken();
   const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
@@ -58,7 +79,19 @@ export default function ControlPage() {
   useEffect(() => { fetchLatestRef.current = fetchLatest; }, [fetchLatest]);
 
   const handleTelemetry = useCallback((raw: unknown): void => {
-    setLatest(mapReading(raw));
+    const reading = mapReading(raw);
+    setLatest(reading);
+    setOptimisticTarget((pending) => {
+      if (!pending) return null;
+      if (reading.horizontal_angle === pending.h && reading.vertical_angle === pending.v) {
+        if (optimisticRevertRef.current) {
+          clearTimeout(optimisticRevertRef.current);
+          optimisticRevertRef.current = null;
+        }
+        return null;
+      }
+      return pending;
+    });
   }, []);
   useWSEvent("telemetry_update", handleTelemetry);
 
@@ -86,11 +119,24 @@ export default function ControlPage() {
   const currentMode = latest?.tracking_mode ?? null;
   const hAngle = latest?.horizontal_angle ?? 90;
   const vAngle = latest?.vertical_angle  ?? 90;
+  const displayH = optimisticTarget?.h ?? hAngle;
+  const displayV = optimisticTarget?.v ?? vAngle;
 
-  const handleDirection = useCallback(
-    (dir: Parameters<typeof movePanel>[0]) => movePanel(dir, hAngle, vAngle),
-    [movePanel, hAngle, vAngle]
-  );
+  const handleDirection = useCallback(async (dir: CommandDirection): Promise<void> => {
+    const target = await movePanel(dir, displayH, displayV);
+    if (!target) return;
+    setOptimisticTarget({ h: target.horizontal_angle, v: target.vertical_angle });
+    if (optimisticRevertRef.current) clearTimeout(optimisticRevertRef.current);
+    optimisticRevertRef.current = setTimeout(() => {
+      optimisticRevertRef.current = null;
+      setOptimisticTarget(null);
+    }, OPTIMISTIC_REVERT_MS);
+  }, [movePanel, displayH, displayV]);
+
+  const handleSetMode = useCallback((mode: string): void => {
+    clearOptimistic();
+    void setMode(mode);
+  }, [setMode, clearOptimistic]);
 
 
   return (
@@ -119,12 +165,22 @@ export default function ControlPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row items-center justify-center gap-10">
-            <ElevationView elevationAngle={vAngle} />
-            <AzimuthView azimuthAngle={hAngle} />
+            <ElevationView elevationAngle={displayV} />
+            <AzimuthView azimuthAngle={displayH} />
           </div>
           <div className="flex justify-center gap-10 mt-2 text-xs text-[#64748b]">
-            <span>Commanded vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong></span>
-            <span>Commanded horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong></span>
+            <span>
+              Estimated vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong>
+              {optimisticTarget && optimisticTarget.v !== vAngle && (
+                <span className="ml-1 text-[#94a3b8]">(commanded {optimisticTarget.v}°)</span>
+              )}
+            </span>
+            <span>
+              Estimated horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong>
+              {optimisticTarget && optimisticTarget.h !== hAngle && (
+                <span className="ml-1 text-[#94a3b8]">(commanded {optimisticTarget.h}°)</span>
+              )}
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -138,8 +194,8 @@ export default function ControlPage() {
           esp32Online={esp32Online}
           isStale={isStale}
           isCommandCooldown={isCommandCooldown}
-          onDirection={handleDirection}
-          onSetMode={(m) => { void setMode(m); }}
+          onDirection={(dir) => { void handleDirection(dir); }}
+          onSetMode={handleSetMode}
           onReset={() => { void resetPosition(); }}
         />
 
@@ -178,13 +234,19 @@ export default function ControlPage() {
 
             <div className="pt-2 border-t border-[#e2e8f0] space-y-1 text-xs text-[#64748b]">
               <div className="flex justify-between">
-                <span>Commanded horizontal angle</span>
+                <span>Estimated horizontal angle</span>
                 <span className="font-semibold text-[#1e293b]">{hAngle}°</span>
               </div>
               <div className="flex justify-between">
-                <span>Commanded vertical angle</span>
+                <span>Estimated vertical angle</span>
                 <span className="font-semibold text-[#1e293b]">{vAngle}°</span>
               </div>
+              {optimisticTarget && (
+                <div className="flex justify-between text-[#94a3b8]">
+                  <span>Commanded target</span>
+                  <span className="font-semibold">{optimisticTarget.h}° / {optimisticTarget.v}°</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Tracking mode</span>
                 <span className="font-semibold text-[#1e293b]">{currentMode ?? "—"}</span>

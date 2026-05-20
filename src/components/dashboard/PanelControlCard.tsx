@@ -33,9 +33,10 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
   onReset,
 }) => {
   const isManual = currentMode === "MANUAL";
-  const baseDisabled = sending || !esp32Online || isStale;
-  const dpadDisabled = baseDisabled || isCommandCooldown("MOVE_PANEL");
-  const resetDisabled = baseDisabled || isCommandCooldown("RESET_POSITION");
+  const hardwareDisabled = !esp32Online || isStale;
+  const dpadDisabled = hardwareDisabled || !isManual;
+  const modeDisabled = hardwareDisabled || sending;
+  const resetDisabled = hardwareDisabled || sending || isCommandCooldown("RESET_POSITION");
 
   return (
     <Card>
@@ -64,7 +65,7 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
                   ? "bg-[#3b82f6] text-white border-[#3b82f6] hover:bg-[#2563eb]"
                   : "border-[#e2e8f0] text-[#64748b] hover:border-[#3b82f6] hover:text-[#3b82f6]"
               }`}
-              disabled={baseDisabled}
+              disabled={modeDisabled}
               onClick={() => onSetMode(mode)}
             >
               {currentMode === mode && <Check size={11} />}
@@ -83,9 +84,6 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
           <div className={!isManual ? "opacity-40 pointer-events-none" : ""}>
             <DPad onDirection={onDirection} disabled={dpadDisabled} />
           </div>
-          {isCommandCooldown("MOVE_PANEL") && (
-            <p className="text-xs text-center text-[#94a3b8] mt-1.5">Cooling down...</p>
-          )}
         </div>
 
         <div>

@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createCommand } from "@/lib/api";
 import { buildMovePanelPayload } from "@/lib/solar/commands";
+import type { MovePanelTarget } from "@/lib/solar/commands";
 import type { CommandType, CommandDirection } from "@/lib/types";
 
-const COOLDOWN_COMMANDS = new Set<CommandType>(["MOVE_PANEL", "RESET_POSITION"]);
+const COOLDOWN_COMMANDS = new Set<CommandType>(["RESET_POSITION"]);
 const COOLDOWN_MS = 2_000;
+const MOVE_THROTTLE_MS = 200; // 5 commands/second per direction
 
 interface CommandResult {
   ok: boolean;
@@ -17,7 +19,7 @@ interface PanelCommandsReturn {
   sending: boolean;
   lastResult: CommandResult | null;
   isCommandCooldown: (type: CommandType) => boolean;
-  movePanel: (dir: CommandDirection, currentH: number, currentV: number) => Promise<void>;
+  movePanel: (dir: CommandDirection, currentH: number, currentV: number) => Promise<MovePanelTarget | null>;
   setMode: (mode: string) => Promise<void>;
   resetPosition: () => Promise<void>;
   startTracking: () => Promise<void>;
@@ -25,12 +27,13 @@ interface PanelCommandsReturn {
 }
 
 export function usePanelCommands(token: string | null): PanelCommandsReturn {
-  const [sending, setSending] = useState(false);
+  const [sendingCount, setSendingCount] = useState(0);
   const [lastResult, setLastResult] = useState<CommandResult | null>(null);
   const [cooldowns, setCooldowns] = useState<Partial<Record<CommandType, boolean>>>({});
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cooldownTimersRef = useRef<Partial<Record<CommandType, ReturnType<typeof setTimeout>>>>({});
+  const moveLastAtRef = useRef<Partial<Record<CommandDirection, number>>>({});
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -47,9 +50,13 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
       setLastResult({ ok: false, message: "Not authenticated" });
       return;
     }
-    setSending(true);
-    const result = await createCommand(token, { command_type: type, payload });
-    setSending(false);
+    setSendingCount((c) => c + 1);
+    let result: Awaited<ReturnType<typeof createCommand>>;
+    try {
+      result = await createCommand(token, { command_type: type, payload });
+    } finally {
+      setSendingCount((c) => c - 1);
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     setLastResult(
       result.success
@@ -74,8 +81,15 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
   );
 
   const movePanel = useCallback(
-    (dir: CommandDirection, currentH: number, currentV: number) =>
-      dispatch("MOVE_PANEL", buildMovePanelPayload(dir, currentH, currentV)),
+    async (dir: CommandDirection, currentH: number, currentV: number): Promise<MovePanelTarget | null> => {
+      const now = Date.now();
+      const last = moveLastAtRef.current[dir] ?? 0;
+      if (now - last < MOVE_THROTTLE_MS) return null;
+      moveLastAtRef.current[dir] = now;
+      const target = buildMovePanelPayload(dir, currentH, currentV);
+      await dispatch("MOVE_PANEL", { ...target });
+      return target;
+    },
     [dispatch]
   );
 
@@ -84,5 +98,14 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
   const startTracking = useCallback(() => dispatch("START_TRACKING"),  [dispatch]);
   const stopTracking  = useCallback(() => dispatch("STOP_TRACKING"),   [dispatch]);
 
-  return { sending, lastResult, isCommandCooldown, movePanel, setMode, resetPosition, startTracking, stopTracking };
+  return {
+    sending: sendingCount > 0,
+    lastResult,
+    isCommandCooldown,
+    movePanel,
+    setMode,
+    resetPosition,
+    startTracking,
+    stopTracking,
+  };
 }
