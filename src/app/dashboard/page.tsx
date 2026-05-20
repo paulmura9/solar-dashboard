@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Cpu, Server, Camera, Radio } from "lucide-react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   AreaChart, Area, LineChart, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -16,6 +15,7 @@ import { useApiToken } from "@/hooks/useApiToken";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { usePanelStatus } from "@/hooks/usePanelStatus";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
+import { useWSEvent } from "@/hooks/useWSEvent";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getReadingsHistory, getRecentEvents, getDevices, getLatestVision } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
@@ -27,8 +27,6 @@ import LightSensorsCard from "@/components/dashboard/LightSensorsCard";
 import WeatherDataCard from "@/components/dashboard/WeatherDataCard";
 import type { SensorReading, SystemEvent, DeviceStatus, Severity, VisionResult } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
-
-const supabase = getSupabaseBrowserClient();
 
 const CHART_TOOLTIP_STYLE = {
   contentStyle: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 11, fontFamily: "inherit" },
@@ -123,9 +121,14 @@ export default function OverviewPage() {
     }
   }, [token]);
 
-  // Keep ref current so Realtime/visibility callbacks always use the latest token
+  // Keep ref current so WS/visibility callbacks always use the latest token
   const fetchAllRef = useRef(fetchAll);
   useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
+
+  const handleTelemetryPing = useCallback((): void => {
+    void fetchAllRef.current();
+  }, []);
+  useWSEvent("telemetry_update", handleTelemetryPing);
 
   useEffect(() => {
     if (mountedRef.current) return;
@@ -150,20 +153,12 @@ export default function OverviewPage() {
 
     void fetchAllRef.current();
 
-    const channel = supabase
-      .channel("dashboard-sensor-readings")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "sensor_readings" }, () => {
-        void fetchAllRef.current();
-      })
-      .subscribe();
-
     const handleVisibility = () => {
       if (document.visibilityState === "visible") void fetchAllRef.current();
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      void supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);

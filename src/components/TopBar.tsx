@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import ConnectionStatusBadge from "@/components/ConnectionStatusBadge";
 
 const supabase = getSupabaseBrowserClient();
 
@@ -61,7 +62,10 @@ export default function TopBar() {
     >
       <h2 className="text-base font-bold text-[#1e293b]" suppressHydrationWarning>{title}</h2>
 
-      <div className="relative" ref={dropdownRef}>
+      <div className="flex items-center gap-4">
+        <ConnectionStatusBadge />
+
+        <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setOpen((v) => !v)}
           className="w-8 h-8 rounded-full bg-[#e2e8f0] flex items-center justify-center text-[#64748b] text-xs font-bold select-none hover:bg-[#cbd5e1] transition-colors focus:outline-none"
@@ -91,6 +95,7 @@ export default function TopBar() {
             </button>
           </div>
         )}
+        </div>
       </div>
     </header>
   );

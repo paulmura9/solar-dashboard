@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { useInactivitySignOut } from "@/hooks/useInactivitySignOut";
+import { DashboardWSProvider } from "@/components/providers/DashboardWSProvider";
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   useInactivitySignOut();
@@ -25,5 +26,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   if (isAuthPage) return <>{children}</>;
 
-  return <AuthShell>{children}</AuthShell>;
+  return (
+    <DashboardWSProvider>
+      <AuthShell>{children}</AuthShell>
+    </DashboardWSProvider>
+  );
 }

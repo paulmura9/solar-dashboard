@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,12 @@ import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useCommandHistory } from "@/hooks/useCommandHistory";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
+import { useWSEvent } from "@/hooks/useWSEvent";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { getLatestReading, getDevices } from "@/lib/api";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getCommandLabel } from "@/lib/solar/commands";
 import type { SensorReading, CommandStatus, DeviceStatus } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
-
-const supabase = getSupabaseBrowserClient();
 
 const STATUS_STYLE: Record<CommandStatus, React.CSSProperties> = {
   PENDING:      { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
@@ -56,18 +54,17 @@ export default function ControlPage() {
     setLoading(false);
   }, [token]);
 
+  const fetchLatestRef = useRef(fetchLatest);
+  useEffect(() => { fetchLatestRef.current = fetchLatest; }, [fetchLatest]);
+
+  const handleTelemetryPing = useCallback((): void => {
+    void fetchLatestRef.current();
+  }, []);
+  useWSEvent("telemetry_update", handleTelemetryPing);
+
   useEffect(() => {
     setMounted(true);
     void fetchLatest();
-
-    const sub = supabase
-      .channel("sensor_readings_control")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "sensor_readings" }, () => {
-        void fetchLatest();
-      })
-      .subscribe();
-
-    return () => { void supabase.removeChannel(sub); };
   }, [fetchLatest]);
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
