@@ -1,33 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useApiToken } from "@/hooks/useApiToken";
-import { useWSEvent } from "@/hooks/useWSEvent";
-import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
-import { getLatestVision, getVisionHistory, getSignedImageUrl, mapVision } from "@/lib/api";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useLatestVision } from "@/hooks/api/useLatestVision";
+import { useVisionHistory } from "@/hooks/api/useVisionHistory";
+import { getSignedImageUrl } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { dirtColor } from "@/lib/solar/status";
 import { formatPower } from "@/lib/solar/energy";
+import { DirtDetectionSkeleton } from "@/components/skeletons/DirtDetectionSkeleton";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import type { VisionResult } from "@/lib/types";
 
 function dirtIcon(pct: number, cleaning: boolean) {
-  if (pct > 35 || cleaning)
-    return <AlertTriangle size={18} className="text-red-500" />;
-  if (pct > 20)
-    return <AlertTriangle size={18} className="text-amber-500" />;
+  if (pct > 35 || cleaning) return <AlertTriangle size={18} className="text-red-500" />;
+  if (pct > 20) return <AlertTriangle size={18} className="text-amber-500" />;
   return <CheckCircle size={18} className="text-green-500" />;
 }
 
@@ -70,64 +59,31 @@ function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function DirtDetectionPage() {
-  const [latest,            setLatest]            = useState<VisionResult | null>(null);
-  const [history,           setHistory]           = useState<VisionResult[]>([]);
-  const [imageUrl,          setImageUrl]          = useState<string | null>(null);
+  const { data: latest, isLoading: latestLoading } = useLatestVision();
+  const { data: rawHistory, isLoading: historyLoading } = useVisionHistory();
+  const history = rawHistory.length > 0 ? [...rawHistory].reverse() : rawHistory;
+
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
-  const [loading,           setLoading]           = useState(true);
-
-  const token = useApiToken();
-
-  const fetchData = useCallback(async (): Promise<void> => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const [latestData, historyData] = await Promise.all([
-      getLatestVision(token),
-      getVisionHistory(token),
-    ]);
-    setLatest(latestData);
-    setHistory(Array.isArray(historyData) ? historyData.slice().reverse() : []);
-
-    const [imgUrl, procUrl] = await Promise.all([
-      latestData?.image_path           ? getSignedImageUrl(latestData.image_path)           : Promise.resolve(null),
-      latestData?.processed_image_path ? getSignedImageUrl(latestData.processed_image_path) : Promise.resolve(null),
-    ]);
-    setImageUrl(imgUrl);
-    setProcessedImageUrl(procUrl);
-    setLoading(false);
-  }, [token]);
-
-  const fetchDataRef = useRef(fetchData);
-  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
 
   useEffect(() => {
-    void fetchDataRef.current();
-  }, [token]);
-
-  const handleVision = useCallback((raw: unknown): void => {
-    const update = mapVision(raw);
-    setLatest(update);
-    setHistory((prev) => [update, ...prev].slice(0, 50));
-    void (async (): Promise<void> => {
+    let cancelled = false;
+    void (async () => {
       const [imgUrl, procUrl] = await Promise.all([
-        update.image_path           ? getSignedImageUrl(update.image_path)           : Promise.resolve(null),
-        update.processed_image_path ? getSignedImageUrl(update.processed_image_path) : Promise.resolve(null),
+        latest?.image_path ? getSignedImageUrl(latest.image_path) : Promise.resolve(null),
+        latest?.processed_image_path ? getSignedImageUrl(latest.processed_image_path) : Promise.resolve(null),
       ]);
+      if (cancelled) return;
       setImageUrl(imgUrl);
       setProcessedImageUrl(procUrl);
     })();
-  }, []);
-  useWSEvent("vision_update", handleVision);
+    return () => { cancelled = true; };
+  }, [latest?.image_path, latest?.processed_image_path]);
 
-  const resync = useCallback((): void => { void fetchDataRef.current(); }, []);
-  useWSReconnectResync(resync);
+  const firstLoad = (latestLoading || historyLoading) && !latest && history.length === 0;
+  if (firstLoad) return <DirtDetectionSkeleton />;
 
-  const energyImpact = latest
-    ? computeEnergyImpact(latest.dirt_level_percent ?? 0)
-    : null;
+  const energyImpact = latest ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 
   return (
     <ErrorBoundary>
@@ -140,13 +96,7 @@ export default function DirtDetectionPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading && !latest ? (
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-32" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-48" />
-              </div>
-            ) : !latest ? (
+            {!latest ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <span className="text-slate-400">No dirt detection results yet</span>
                 <span className="text-slate-300 text-sm">Results will appear after the camera pipeline runs</span>
@@ -159,7 +109,7 @@ export default function DirtDetectionPage() {
                       className="text-5xl font-bold tabular-nums"
                       style={{ color: latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8" }}
                     >
-                      {latest?.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
+                      {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
                     </span>
                     <span className="text-lg text-[#94a3b8]">%</span>
                     <span className="text-sm text-[#64748b] ml-1">dirt level</span>
@@ -194,7 +144,7 @@ export default function DirtDetectionPage() {
                   </div>
                   <div>
                     <p className="text-[#94a3b8] mb-0.5">Last analysis</p>
-                    <p className="font-semibold text-[#1e293b]">
+                    <p className="font-semibold text-[#1e293b]" suppressHydrationWarning>
                       {new Date(latest.timestamp).toLocaleString("ro-RO", {
                         day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                       })}
@@ -221,7 +171,7 @@ export default function DirtDetectionPage() {
                         </div>
                       </div>
                       <p className="text-[10px] text-[#64748b] leading-relaxed border-t border-[#e8edf5] pt-2.5">
-                        At {latest?.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}% dirt coverage, the panel surface
+                        At {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}% dirt coverage, the panel surface
                         transmittance is reduced by an estimated {(energyImpact.lossFactor * 100).toFixed(1)}%,
                         resulting in approximately {formatPower(energyImpact.powerLostW)} of lost output.
                       </p>
@@ -272,11 +222,7 @@ export default function DirtDetectionPage() {
             <CardTitle className="text-sm font-semibold text-[#1e293b]">Detection History</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {loading && history.length === 0 ? (
-              <div className="px-4 pb-4 space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-              </div>
-            ) : history.length === 0 ? (
+            {history.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-sm">
                 No history available yet
               </div>
@@ -294,7 +240,7 @@ export default function DirtDetectionPage() {
                 <TableBody>
                   {history.map((v) => (
                     <TableRow key={v.id} className="border-[#e2e8f0] text-xs">
-                      <TableCell className="text-[#64748b] tabular-nums">
+                      <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
                         {new Date(v.timestamp).toLocaleString("ro-RO", {
                           day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                         })}

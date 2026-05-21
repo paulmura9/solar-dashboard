@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BorderBeam } from "@/components/magic/BorderBeam";
 import ElevationView from "@/components/ElevationView";
@@ -12,14 +11,14 @@ import AzimuthView from "@/components/AzimuthView";
 import PanelControlCard from "@/components/dashboard/PanelControlCard";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
-import { useCommandHistory } from "@/hooks/useCommandHistory";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
-import { useWSEvent } from "@/hooks/useWSEvent";
-import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
+import { useLatestReading } from "@/hooks/api/useLatestReading";
+import { useDevices } from "@/hooks/api/useDevices";
+import { useCommands } from "@/hooks/api/useCommands";
 import StaleDataBanner from "@/components/StaleDataBanner";
-import { getLatestReading, getDevices, mapReading, mapDevice } from "@/lib/api";
+import { ControlSkeleton } from "@/components/skeletons/ControlSkeleton";
 import { getCommandLabel } from "@/lib/solar/commands";
-import type { SensorReading, CommandStatus, DeviceStatus, CommandDirection } from "@/lib/types";
+import type { CommandStatus, CommandDirection } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const OPTIMISTIC_REVERT_MS = 3_000;
@@ -37,9 +36,11 @@ const STATUS_STYLE: Record<CommandStatus, React.CSSProperties> = {
 };
 
 export default function ControlPage() {
-  const [latest,  setLatest]  = useState<SensorReading | null>(null);
-  const [devices, setDevices] = useState<DeviceStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const token = useApiToken();
+  const { data: latest, isLoading: latestLoading } = useLatestReading();
+  const { data: devices, isLoading: devicesLoading } = useDevices();
+  const { data: commands } = useCommands(10);
+
   const [optimisticTarget, setOptimisticTarget] = useState<OptimisticTarget | null>(null);
   const optimisticRevertRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -55,74 +56,28 @@ export default function ControlPage() {
     setOptimisticTarget(null);
   }, []);
 
-  const token = useApiToken();
   const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
     usePanelCommands(token);
-  const { commands } = useCommandHistory(token, 10);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
-  const fetchLatest = useCallback(async (): Promise<void> => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const [reading, deviceData] = await Promise.all([
-      getLatestReading(token),
-      getDevices(token),
-    ]);
-    setLatest(reading);
-    setDevices(deviceData);
-    setLoading(false);
-  }, [token]);
-
-  const fetchLatestRef = useRef(fetchLatest);
-  useEffect(() => { fetchLatestRef.current = fetchLatest; }, [fetchLatest]);
-
-  const handleTelemetry = useCallback((raw: unknown): void => {
-    const reading = mapReading(raw);
-    setLatest(reading);
-    setOptimisticTarget((pending) => {
-      if (!pending) return null;
-      if (reading.horizontal_angle === pending.h && reading.vertical_angle === pending.v) {
-        if (optimisticRevertRef.current) {
-          clearTimeout(optimisticRevertRef.current);
-          optimisticRevertRef.current = null;
-        }
-        return null;
-      }
-      return pending;
-    });
-  }, []);
-  useWSEvent("telemetry_update", handleTelemetry);
-
-  const handleDeviceStatus = useCallback((raw: unknown): void => {
-    const update = mapDevice(raw);
-    setDevices((prev) => {
-      const idx = prev.findIndex((d) => d.device_name === update.device_name);
-      if (idx === -1) return [...prev, update];
-      const next = prev.slice();
-      next[idx] = update;
-      return next;
-    });
-  }, []);
-  useWSEvent("device_status_update", handleDeviceStatus);
-
-  const resync = useCallback((): void => { void fetchLatestRef.current(); }, []);
-  useWSReconnectResync(resync);
-
-  useEffect(() => {
-    void fetchLatestRef.current();
-  }, [token]);
+  const firstLoad = !latest && devices.length === 0 && (latestLoading || devicesLoading);
+  if (firstLoad) return <ControlSkeleton />;
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
-
   const currentMode = latest?.tracking_mode ?? null;
   const hAngle = latest?.horizontal_angle ?? 90;
-  const vAngle = latest?.vertical_angle  ?? 90;
-  const displayH = optimisticTarget?.h ?? hAngle;
-  const displayV = optimisticTarget?.v ?? vAngle;
+  const vAngle = latest?.vertical_angle ?? 90;
+  const targetReached = !!(
+    optimisticTarget &&
+    latest &&
+    latest.horizontal_angle === optimisticTarget.h &&
+    latest.vertical_angle === optimisticTarget.v
+  );
+  const activeTarget = targetReached ? null : optimisticTarget;
+  const displayH = activeTarget?.h ?? hAngle;
+  const displayV = activeTarget?.v ?? vAngle;
 
-  const handleDirection = useCallback(async (dir: CommandDirection): Promise<void> => {
+  const handleDirection = async (dir: CommandDirection): Promise<void> => {
     const target = await movePanel(dir, displayH, displayV);
     if (!target) return;
     setOptimisticTarget({ h: target.horizontal_angle, v: target.vertical_angle });
@@ -131,19 +86,18 @@ export default function ControlPage() {
       optimisticRevertRef.current = null;
       setOptimisticTarget(null);
     }, OPTIMISTIC_REVERT_MS);
-  }, [movePanel, displayH, displayV]);
+  };
 
-  const handleSetMode = useCallback((mode: string): void => {
+  const handleSetMode = (mode: string): void => {
     clearOptimistic();
     void setMode(mode);
-  }, [setMode, clearOptimistic]);
-
+  };
 
   return (
     <div className="space-y-5">
       <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
 
-      {!loading && !esp32Online && (
+      {!esp32Online && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
           <span>⚠</span>
           <span>
@@ -153,159 +107,157 @@ export default function ControlPage() {
       )}
 
       <ErrorBoundary>
-      <Card className="relative overflow-hidden">
-        <BorderBeam colorFrom="#3b82f6" colorTo="#60a5fa" size={120} duration={8} borderWidth={1.5} />
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-[#1e293b] flex items-center justify-between">
-            <span>Panel Visualization</span>
-            {loading
-              ? <Skeleton className="h-5 w-20" />
-              : <span className="text-xs font-normal text-[#64748b]">Live telemetry</span>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-10">
-            <ElevationView elevationAngle={displayV} />
-            <AzimuthView azimuthAngle={displayH} />
-          </div>
-          <div className="flex justify-center gap-10 mt-2 text-xs text-[#64748b]">
-            <span>
-              Estimated vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong>
-              {optimisticTarget && optimisticTarget.v !== vAngle && (
-                <span className="ml-1 text-[#94a3b8]">(commanded {optimisticTarget.v}°)</span>
-              )}
-            </span>
-            <span>
-              Estimated horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong>
-              {optimisticTarget && optimisticTarget.h !== hAngle && (
-                <span className="ml-1 text-[#94a3b8]">(commanded {optimisticTarget.h}°)</span>
-              )}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-      </ErrorBoundary>
-
-      <ErrorBoundary>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <PanelControlCard
-          currentMode={currentMode}
-          sending={sending}
-          esp32Online={esp32Online}
-          isStale={isStale}
-          isCommandCooldown={isCommandCooldown}
-          onDirection={(dir) => { void handleDirection(dir); }}
-          onSetMode={handleSetMode}
-          onReset={() => { void resetPosition(); }}
-        />
-
-        <Card>
+        <Card className="relative overflow-hidden">
+          <BorderBeam colorFrom="#3b82f6" colorTo="#60a5fa" size={120} duration={8} borderWidth={1.5} />
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-[#1e293b]">Actions</CardTitle>
+            <CardTitle className="text-sm font-semibold text-[#1e293b] flex items-center justify-between">
+              <span>Panel Visualization</span>
+              <span className="text-xs font-normal text-[#64748b]">Live telemetry</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
-              onClick={() => { void startTracking(); }}
-              disabled={sending || !esp32Online || isStale}
-              title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
-            >
-              Start Tracking
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full border-[#ef4444] text-[#ef4444] hover:bg-red-50 text-sm font-medium"
-              onClick={() => { void stopTracking(); }}
-              disabled={sending || !esp32Online || isStale}
-              title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
-            >
-              Stop Tracking
-            </Button>
-
-            {lastResult && (
-              <div className={`rounded-lg border px-3 py-2 text-xs font-medium ${
-                lastResult.ok
-                  ? "bg-green-50 border-green-200 text-green-700"
-                  : "bg-red-50 border-red-200 text-red-700"
-              }`}>
-                {lastResult.message}
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-[#e2e8f0] space-y-1 text-xs text-[#64748b]">
-              <div className="flex justify-between">
-                <span>Estimated horizontal angle</span>
-                <span className="font-semibold text-[#1e293b]">{hAngle}°</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Estimated vertical angle</span>
-                <span className="font-semibold text-[#1e293b]">{vAngle}°</span>
-              </div>
-              {optimisticTarget && (
-                <div className="flex justify-between text-[#94a3b8]">
-                  <span>Commanded target</span>
-                  <span className="font-semibold">{optimisticTarget.h}° / {optimisticTarget.v}°</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span>Tracking mode</span>
-                <span className="font-semibold text-[#1e293b]">{currentMode ?? "—"}</span>
-              </div>
+          <CardContent>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-10">
+              <ElevationView elevationAngle={displayV} />
+              <AzimuthView azimuthAngle={displayH} />
+            </div>
+            <div className="flex justify-center gap-10 mt-2 text-xs text-[#64748b]">
+              <span>
+                Estimated vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong>
+                {activeTarget && activeTarget.v !== vAngle && (
+                  <span className="ml-1 text-[#94a3b8]">(commanded {activeTarget.v}°)</span>
+                )}
+              </span>
+              <span>
+                Estimated horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong>
+                {activeTarget && activeTarget.h !== hAngle && (
+                  <span className="ml-1 text-[#94a3b8]">(commanded {activeTarget.h}°)</span>
+                )}
+              </span>
             </div>
           </CardContent>
         </Card>
-      </div>
       </ErrorBoundary>
 
       <ErrorBoundary>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-[#1e293b]">Command History</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {commands.length === 0 ? (
-            <p className="px-4 pb-4 text-xs text-[#94a3b8]">No commands sent yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-[#e2e8f0]">
-                  <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider w-36">Time</TableHead>
-                  <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Command</TableHead>
-                  <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider w-28">Status</TableHead>
-                  <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Detail</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {commands.map((cmd) => (
-                  <TableRow key={cmd.id} className="border-[#e2e8f0] text-xs">
-                    <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
-                      {new Date(cmd.created_at).toLocaleString("ro-RO", {
-                        day: "2-digit", month: "2-digit",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell className="font-medium text-[#1e293b]">
-                      {getCommandLabel(cmd.command_type)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" style={STATUS_STYLE[cmd.status]}>
-                        {cmd.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[#64748b]">
-                      {cmd.status === "FAILED" && cmd.error_message
-                        ? <span className="text-red-600">{cmd.error_message}</span>
-                        : cmd.status === "ACKNOWLEDGED" && cmd.acknowledged_at
-                          ? `ACK ${new Date(cmd.acknowledged_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-                          : "—"}
-                    </TableCell>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <PanelControlCard
+            currentMode={currentMode}
+            sending={sending}
+            esp32Online={esp32Online}
+            isStale={isStale}
+            isCommandCooldown={isCommandCooldown}
+            onDirection={(dir) => { void handleDirection(dir); }}
+            onSetMode={handleSetMode}
+            onReset={() => { void resetPosition(); }}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold text-[#1e293b]">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
+                onClick={() => { void startTracking(); }}
+                disabled={sending || !esp32Online || isStale}
+                title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
+              >
+                Start Tracking
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-[#ef4444] text-[#ef4444] hover:bg-red-50 text-sm font-medium"
+                onClick={() => { void stopTracking(); }}
+                disabled={sending || !esp32Online || isStale}
+                title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
+              >
+                Stop Tracking
+              </Button>
+
+              {lastResult && (
+                <div className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                  lastResult.ok
+                    ? "bg-green-50 border-green-200 text-green-700"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }`}>
+                  {lastResult.message}
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-[#e2e8f0] space-y-1 text-xs text-[#64748b]">
+                <div className="flex justify-between">
+                  <span>Estimated horizontal angle</span>
+                  <span className="font-semibold text-[#1e293b]">{hAngle}°</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Estimated vertical angle</span>
+                  <span className="font-semibold text-[#1e293b]">{vAngle}°</span>
+                </div>
+                {activeTarget && (
+                  <div className="flex justify-between text-[#94a3b8]">
+                    <span>Commanded target</span>
+                    <span className="font-semibold">{activeTarget.h}° / {activeTarget.v}°</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Tracking mode</span>
+                  <span className="font-semibold text-[#1e293b]">{currentMode ?? "—"}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-[#1e293b]">Command History</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {commands.length === 0 ? (
+              <p className="px-4 pb-4 text-xs text-[#94a3b8]">No commands sent yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-[#e2e8f0]">
+                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider w-36">Time</TableHead>
+                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Command</TableHead>
+                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider w-28">Status</TableHead>
+                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Detail</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {commands.map((cmd) => (
+                    <TableRow key={cmd.id} className="border-[#e2e8f0] text-xs">
+                      <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
+                        {new Date(cmd.created_at).toLocaleString("ro-RO", {
+                          day: "2-digit", month: "2-digit",
+                          hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        })}
+                      </TableCell>
+                      <TableCell className="font-medium text-[#1e293b]">
+                        {getCommandLabel(cmd.command_type)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" style={STATUS_STYLE[cmd.status]}>
+                          {cmd.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[#64748b]">
+                        {cmd.status === "FAILED" && cmd.error_message
+                          ? <span className="text-red-600">{cmd.error_message}</span>
+                          : cmd.status === "ACKNOWLEDGED" && cmd.acknowledged_at
+                            ? `ACK ${new Date(cmd.acknowledged_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+                            : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </ErrorBoundary>
     </div>
   );

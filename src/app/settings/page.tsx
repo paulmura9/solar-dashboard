@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
 import { CheckCircle, XCircle, Cpu, Server, Camera, Radio } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -13,10 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useApiToken } from "@/hooks/useApiToken";
-import { useWSEvent } from "@/hooks/useWSEvent";
-import { useWSReconnectResync } from "@/hooks/useWSReconnectResync";
-import { getDevices, mapDevice } from "@/lib/api";
+import { useDevices } from "@/hooks/api/useDevices";
+import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import type { DeviceStatus } from "@/lib/types";
 
@@ -39,106 +35,70 @@ const supabaseDomain = supabaseUrl.replace(/^https?:\/\//, "").split(".")[0];
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export default function SettingsPage() {
-  const [devices, setDevices] = useState<DeviceStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: devices, isLoading } = useDevices();
 
-  const token = useApiToken();
+  if (isLoading && devices.length === 0) return <SettingsSkeleton />;
 
-  const fetchData = useCallback(async (): Promise<void> => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const data = await getDevices(token);
-    setDevices(data);
-    setLoading(false);
-  }, [token]);
-
-  const fetchDataRef = useRef(fetchData);
-  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
-
-  useEffect(() => {
-    void fetchDataRef.current();
-  }, [token]);
-
-  const handleDeviceStatus = useCallback((raw: unknown): void => {
-    const update = mapDevice(raw);
-    setDevices((prev) => {
-      const idx = prev.findIndex((d) => d.device_name === update.device_name);
-      if (idx === -1) return [...prev, update];
-      const next = prev.slice();
-      next[idx] = update;
-      return next;
-    });
-  }, []);
-  useWSEvent("device_status_update", handleDeviceStatus);
-
-  const resync = useCallback((): void => { void fetchDataRef.current(); }, []);
-  useWSReconnectResync(resync);
+  const tableDevices = devices.length > 0 ? devices : SETTINGS_OFFLINE_DEVICES;
 
   return (
     <ErrorBoundary>
-    <div className="space-y-5 max-w-3xl">
-      <Card className="border border-[#e2e8f0] ring-0">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-[#1e293b]">Connected Services</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-[#e2e8f0]">
-            <div>
-              <p className="text-xs font-semibold text-[#1e293b]">Supabase (PostgreSQL)</p>
-              <p className="text-xs text-[#64748b] mt-0.5">
-                {supabaseDomain ? `${supabaseDomain}.supabase.co` : "Not configured"}
-              </p>
+      <div className="space-y-5 max-w-3xl">
+        <Card className="border border-[#e2e8f0] ring-0">
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-[#1e293b]">Connected Services</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between py-2 border-b border-[#e2e8f0]">
+              <div>
+                <p className="text-xs font-semibold text-[#1e293b]">Supabase (PostgreSQL)</p>
+                <p className="text-xs text-[#64748b] mt-0.5">
+                  {supabaseDomain ? `${supabaseDomain}.supabase.co` : "Not configured"}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                {supabaseUrl ? (
+                  <>
+                    <CheckCircle size={14} className="text-green-500" />
+                    <span className="text-green-600 font-medium">Configured</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle size={14} className="text-red-500" />
+                    <span className="text-red-500 font-medium">Missing</span>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              {supabaseUrl ? (
-                <>
-                  <CheckCircle size={14} className="text-green-500" />
-                  <span className="text-green-600 font-medium">Configured</span>
-                </>
-              ) : (
-                <>
-                  <XCircle size={14} className="text-red-500" />
-                  <span className="text-red-500 font-medium">Missing</span>
-                </>
-              )}
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="text-xs font-semibold text-[#1e293b]">Express REST Backend</p>
+                <p className="text-xs text-[#64748b] mt-0.5">
+                  {apiUrl || "Not configured"}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                {apiUrl ? (
+                  <>
+                    <CheckCircle size={14} className="text-green-500" />
+                    <span className="text-green-600 font-medium">Configured</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle size={14} className="text-red-500" />
+                    <span className="text-red-500 font-medium">Missing</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-xs font-semibold text-[#1e293b]">Express REST Backend</p>
-              <p className="text-xs text-[#64748b] mt-0.5">
-                {apiUrl || "Not configured"}
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              {apiUrl ? (
-                <>
-                  <CheckCircle size={14} className="text-green-500" />
-                  <span className="text-green-600 font-medium">Configured</span>
-                </>
-              ) : (
-                <>
-                  <XCircle size={14} className="text-red-500" />
-                  <span className="text-red-500 font-medium">Missing</span>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card className="border border-[#e2e8f0] ring-0">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-[#1e293b]">Device Status</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="px-4 pb-4 space-y-2 pt-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-            </div>
-          ) : (
+        <Card className="border border-[#e2e8f0] ring-0">
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-[#1e293b]">Device Status</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow className="border-[#e2e8f0]">
@@ -149,7 +109,7 @@ export default function SettingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(devices.length > 0 ? devices : SETTINGS_OFFLINE_DEVICES).map((d) => {
+                {tableDevices.map((d) => {
                   const meta = DEVICE_DISPLAY[d.device_name] ?? { label: d.device_name, icon: Cpu };
                   const Icon = meta.icon;
                   return (
@@ -173,7 +133,7 @@ export default function SettingsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[#64748b]">{d.firmware_version ?? "—"}</TableCell>
-                      <TableCell className="text-[#64748b] tabular-nums">
+                      <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
                         {d.last_seen
                           ? new Date(d.last_seen).toLocaleString("ro-RO", {
                               day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
@@ -185,42 +145,41 @@ export default function SettingsPage() {
                 })}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card className="border border-[#e2e8f0] ring-0">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-[#1e293b]">Project Info</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-xs text-[#64748b]">
-          <div className="flex justify-between">
-            <span>Project</span>
-            <span className="text-[#1e293b] font-medium">LightTrack</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Frontend</span>
-            <span className="text-[#1e293b] font-medium">Next.js 16 · Vercel</span>
-          </div>
-          <div className="flex justify-between">
-            <span>API</span>
-            <span className="text-[#1e293b] font-medium">Express · Raspberry Pi 3B</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Database</span>
-            <span className="text-[#1e293b] font-medium">Supabase Cloud</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Firmware</span>
-            <span className="text-[#1e293b] font-medium">ESP32 DevKit</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Gateway</span>
-            <span className="text-[#1e293b] font-medium">Python 3 · Raspberry Pi 3B</span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <Card className="border border-[#e2e8f0] ring-0">
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-[#1e293b]">Project Info</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs text-[#64748b]">
+            <div className="flex justify-between">
+              <span>Project</span>
+              <span className="text-[#1e293b] font-medium">LightTrack</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Frontend</span>
+              <span className="text-[#1e293b] font-medium">Next.js 16 · Vercel</span>
+            </div>
+            <div className="flex justify-between">
+              <span>API</span>
+              <span className="text-[#1e293b] font-medium">Express · Raspberry Pi 3B</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Database</span>
+              <span className="text-[#1e293b] font-medium">Supabase Cloud</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Firmware</span>
+              <span className="text-[#1e293b] font-medium">ESP32 DevKit</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Gateway</span>
+              <span className="text-[#1e293b] font-medium">Python 3 · Raspberry Pi 3B</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </ErrorBoundary>
   );
 }
