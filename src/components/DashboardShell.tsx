@@ -6,6 +6,9 @@ import TopBar from "@/components/TopBar";
 import { useInactivitySignOut } from "@/hooks/useInactivitySignOut";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { DashboardWSProvider } from "@/components/providers/DashboardWSProvider";
+import { SWRProvider } from "@/components/providers/SWRProvider";
+import { WsCacheBridge } from "@/components/providers/WsCacheBridge";
+import { ShellPrefetch } from "@/components/providers/ShellPrefetch";
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   useAuthGuard();
@@ -29,8 +32,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   if (isAuthPage) return <>{children}</>;
 
   return (
-    <DashboardWSProvider>
-      <AuthShell>{children}</AuthShell>
-    </DashboardWSProvider>
+    <SWRProvider>
+      <DashboardWSProvider>
+        <WsCacheBridge />
+        <ShellPrefetch />
+        <AuthShell>{children}</AuthShell>
+      </DashboardWSProvider>
+    </SWRProvider>
   );
 }
