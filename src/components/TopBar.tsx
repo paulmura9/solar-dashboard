@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { signOutCompletely } from "@/lib/auth/signOut";
 import ConnectionStatusBadge from "@/components/ConnectionStatusBadge";
 
 const supabase = getSupabaseBrowserClient();
@@ -46,10 +47,7 @@ export default function TopBar() {
   }, [open]);
 
   async function handleSignOut() {
-    localStorage.removeItem("lighttrack_last_activity");
-    sessionStorage.clear();
-    await supabase.auth.signOut({ scope: "global" });
-    window.location.replace("/login");
+    await signOutCompletely();
   }
 
   const title    = PAGE_TITLES[pathname] ?? "LightTrack";

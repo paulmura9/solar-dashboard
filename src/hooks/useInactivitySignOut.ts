@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { signOutCompletely } from "@/lib/auth/signOut";
 
 const INACTIVITY_MS = 8 * 60 * 60 * 1000;
 const LAST_ACTIVITY_KEY = "lighttrack_last_activity";
@@ -10,10 +10,7 @@ export function useInactivitySignOut() {
   useEffect(() => {
     const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
     if (stored && Date.now() - parseInt(stored, 10) > INACTIVITY_MS) {
-      sessionStorage.clear();
-      getSupabaseBrowserClient().auth.signOut().then(() => {
-        window.location.replace("/login");
-      });
+      void signOutCompletely();
       return;
     }
 

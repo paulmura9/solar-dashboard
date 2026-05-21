@@ -4,9 +4,11 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { useInactivitySignOut } from "@/hooks/useInactivitySignOut";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { DashboardWSProvider } from "@/components/providers/DashboardWSProvider";
 
 function AuthShell({ children }: { children: React.ReactNode }) {
+  useAuthGuard();
   useInactivitySignOut();
 
   return (
