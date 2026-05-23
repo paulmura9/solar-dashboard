@@ -38,7 +38,7 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" W" width={40} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Area type="monotone" dataKey="solar" name="Solar" stroke="#f59e0b" fill="url(#solarFill)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="solar" name="Solar" stroke="#f59e0b" fill="url(#solarFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -57,7 +57,7 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" V" width={40} domain={[6, 9]} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Line type="monotone" dataKey="voltage" name="Voltage" stroke="#22c55e" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="voltage" name="Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -76,7 +76,7 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={40} domain={[0, 180]} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Line type="monotone" dataKey="elevation" name="Elevation" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="elevation" name="Elevation" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -101,7 +101,7 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" W" width={40} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Area type="monotone" dataKey="charging" name="Charging" stroke="#22c55e" fill="url(#chargingFill)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="charging" name="Charging" stroke="#22c55e" fill="url(#chargingFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

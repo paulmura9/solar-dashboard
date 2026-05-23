@@ -39,8 +39,8 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" W" width={48} />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
-                <Area type="monotone" dataKey="solar"    name="Solar Power"    stroke="#f59e0b" fill="url(#solarGrad)"  strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="charging" name="Charging Power" stroke="#3b82f6" fill="url(#chargeGrad)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="solar"    name="Solar Power"    stroke="#f59e0b" fill="url(#solarGrad)"  strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="charging" name="Charging Power" stroke="#3b82f6" fill="url(#chargeGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -57,7 +57,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" V" width={48} domain={[6, 9]} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -75,8 +75,8 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[0, 180]} />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
-                <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="elevation" name="Commanded vertical angle"   stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="elevation" name="Commanded vertical angle"   stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="4 2" isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -93,7 +93,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" Wh" width={56} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Bar dataKey="wh" name="Energy" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="wh" name="Energy" fill="#3b82f6" radius={[3, 3, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
