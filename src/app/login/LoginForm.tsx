@@ -2,20 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { SolarLogo } from "@/components/SolarLogo";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { AUTH_COOKIE_PREFIX } from "@/config/auth";
+import { ToastNotice } from "@/components/ui/toast-notice";
+import { AUTH_COOKIE_PREFIX, LOGIN_ROUTE } from "@/config/auth";
 
 interface LoginFormProps {
   justSignedOut: boolean;
 }
 
 export function LoginForm({ justSignedOut }: LoginFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSignedOutToast, setShowSignedOutToast] = useState(justSignedOut);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -26,6 +30,11 @@ export function LoginForm({ justSignedOut }: LoginFormProps) {
       document.cookie = `${name}=; expires=${expired}; path=/`;
     }
   }, []);
+
+  useEffect(() => {
+    if (!justSignedOut) return;
+    router.replace(LOGIN_ROUTE, { scroll: false });
+  }, [justSignedOut, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,17 +80,6 @@ export function LoginForm({ justSignedOut }: LoginFormProps) {
         <div className="h-0.5 bg-gradient-to-r from-green-600 to-green-400" />
 
         <div className="px-7 py-8">
-          {justSignedOut && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="mb-5 flex items-center gap-2 rounded-lg border border-green-100 bg-green-50 px-3 py-2 text-xs text-green-700"
-            >
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
-              Te-ai delogat cu succes.
-            </div>
-          )}
-
           <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#94a3b8] mb-6">
             Authentication required
           </p>
@@ -171,6 +169,13 @@ export function LoginForm({ justSignedOut }: LoginFormProps) {
       <p className="mt-3 text-[10px] text-[#94a3b8] tracking-wide">
         Solar Tracker IoT Dashboard — Authorised access only
       </p>
+
+      {showSignedOutToast && (
+        <ToastNotice
+          message="Te-ai delogat cu succes"
+          onClose={() => setShowSignedOutToast(false)}
+        />
+      )}
     </div>
   );
 }
