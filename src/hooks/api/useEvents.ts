@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import useSWR from "swr";
 import { apiKeys, type EventListEnvelope, type SystemEvent } from "@/types/api";
 import { mapEvent } from "@/lib/api";
@@ -10,23 +11,22 @@ const EMPTY: SystemEvent[] = [];
 export interface EventsResult {
   data: SystemEvent[];
   error: Error | null;
-  isLoading: boolean;
-  isValidating: boolean;
+  isInitialLoad: boolean;
   mutate: () => Promise<void>;
 }
 
 export function useEvents(limit = PERF_CONFIG.cache.eventsCap): EventsResult {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<EventListEnvelope>(
-    apiKeys.events(limit)
-  );
+  const { data, error, mutate } = useSWR<EventListEnvelope>(apiKeys.events(limit));
 
-  const events = Array.isArray(data?.data) ? data.data.map(mapEvent) : EMPTY;
+  const events = useMemo(
+    () => (Array.isArray(data?.data) ? data.data.map(mapEvent) : EMPTY),
+    [data]
+  );
 
   return {
     data: events,
     error: (error as Error | undefined) ?? null,
-    isLoading,
-    isValidating,
+    isInitialLoad: data === undefined && !error,
     mutate: async () => {
       await mutate();
     },

@@ -10,9 +10,9 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function LiveCameraPage() {
-  const { data: devices, isLoading } = useDevices();
+  const { data: devices, isInitialLoad } = useDevices();
 
-  if (isLoading && devices.length === 0) return <LiveSkeleton />;
+  if (isInitialLoad) return <LiveSkeleton />;
 
   const camera = devices.find((d) => d.device_name === "CAMERA");
   const pi = devices.find((d) => d.device_name === "RASPBERRY_PI");

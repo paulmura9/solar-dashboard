@@ -35,9 +35,9 @@ const supabaseDomain = supabaseUrl.replace(/^https?:\/\//, "").split(".")[0];
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export default function SettingsPage() {
-  const { data: devices, isLoading } = useDevices();
+  const { data: devices, isInitialLoad } = useDevices();
 
-  if (isLoading && devices.length === 0) return <SettingsSkeleton />;
+  if (isInitialLoad) return <SettingsSkeleton />;
 
   const tableDevices = devices.length > 0 ? devices : SETTINGS_OFFLINE_DEVICES;
 

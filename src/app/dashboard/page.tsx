@@ -55,10 +55,10 @@ function parseSubsystem(eventType: string): string {
 }
 
 export default function OverviewPage() {
-  const { data: latest, isLoading: latestLoading } = useLatestReading();
+  const { data: latest, isInitialLoad: latestInitial } = useLatestReading();
   const { data: history } = useReadingsHistory({ hours: 24 });
   const { data: events } = useEvents(PERF_CONFIG.cache.eventsCap);
-  const { data: devices, isLoading: devicesLoading } = useDevices();
+  const { data: devices, isInitialLoad: devicesInitial } = useDevices();
   const { data: vision } = useLatestVision();
 
   const weatherData = useWeatherData();
@@ -70,8 +70,7 @@ export default function OverviewPage() {
     [history]
   );
 
-  const firstLoad = !latest && devices.length === 0 && (latestLoading || devicesLoading);
-  if (firstLoad) return <DashboardSkeleton />;
+  if (latestInitial && devicesInitial) return <DashboardSkeleton />;
 
   const displayDevices = devices.length > 0 ? devices : OFFLINE_PLACEHOLDER_DEVICES;
   const isPlaceholderDevices = devices.length === 0;

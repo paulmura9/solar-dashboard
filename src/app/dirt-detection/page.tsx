@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,9 +59,12 @@ function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function DirtDetectionPage() {
-  const { data: latest, isLoading: latestLoading } = useLatestVision();
-  const { data: rawHistory, isLoading: historyLoading } = useVisionHistory();
-  const history = rawHistory.length > 0 ? [...rawHistory].reverse() : rawHistory;
+  const { data: latest, isInitialLoad: latestInitial } = useLatestVision();
+  const { data: rawHistory, isInitialLoad: historyInitial } = useVisionHistory();
+  const history = useMemo(
+    () => (rawHistory.length > 0 ? [...rawHistory].reverse() : rawHistory),
+    [rawHistory]
+  );
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
@@ -80,8 +83,7 @@ export default function DirtDetectionPage() {
     return () => { cancelled = true; };
   }, [latest?.image_path, latest?.processed_image_path]);
 
-  const firstLoad = (latestLoading || historyLoading) && !latest && history.length === 0;
-  if (firstLoad) return <DirtDetectionSkeleton />;
+  if (latestInitial && historyInitial) return <DirtDetectionSkeleton />;
 
   const energyImpact = latest ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 

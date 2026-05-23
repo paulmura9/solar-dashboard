@@ -37,8 +37,8 @@ const STATUS_STYLE: Record<CommandStatus, React.CSSProperties> = {
 
 export default function ControlPage() {
   const token = useApiToken();
-  const { data: latest, isLoading: latestLoading } = useLatestReading();
-  const { data: devices, isLoading: devicesLoading } = useDevices();
+  const { data: latest, isInitialLoad: latestInitial } = useLatestReading();
+  const { data: devices, isInitialLoad: devicesInitial } = useDevices();
   const { data: commands } = useCommands(10);
 
   const [optimisticTarget, setOptimisticTarget] = useState<OptimisticTarget | null>(null);
@@ -60,8 +60,7 @@ export default function ControlPage() {
     usePanelCommands(token);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
-  const firstLoad = !latest && devices.length === 0 && (latestLoading || devicesLoading);
-  if (firstLoad) return <ControlSkeleton />;
+  if (latestInitial && devicesInitial) return <ControlSkeleton />;
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
   const currentMode = latest?.tracking_mode ?? null;

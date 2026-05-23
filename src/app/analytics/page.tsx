@@ -18,14 +18,12 @@ const RANGES = [
 
 export default function AnalyticsPage() {
   const [hours, setHours] = useState<number>(24);
-  const { data: readings, isLoading } = useReadingsHistory({ hours });
+  const { data: readings, isInitialLoad } = useReadingsHistory({ hours });
 
   const series = useMemo(
     () => transformAnalyticsCharts(readings, SOLAR_CONFIG.chart.downsampleAnalytics, hours),
     [readings, hours]
   );
-
-  const firstLoad = isLoading && readings.length === 0;
 
   return (
     <ErrorBoundary>
@@ -47,7 +45,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {firstLoad ? <AnalyticsSkeleton /> : <AnalyticsCharts series={series} />}
+        {isInitialLoad ? <AnalyticsSkeleton /> : <AnalyticsCharts series={series} />}
       </div>
     </ErrorBoundary>
   );
