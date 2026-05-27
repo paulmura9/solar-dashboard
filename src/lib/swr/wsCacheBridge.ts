@@ -79,7 +79,26 @@ export function applyDeviceUpdate(mutate: ScopedMutator, raw: unknown): void {
   );
 }
 
-export function applyCommandStatusUpdate(mutate: ScopedMutator, update: CommandStatusUpdate): void {
+const VALID_COMMAND_STATUSES: ReadonlySet<string> = new Set(["PENDING", "SENT", "ACKNOWLEDGED", "FAILED"]);
+
+function isCommandStatusUpdate(value: unknown): value is CommandStatusUpdate {
+  if (typeof value !== "object" || value === null) return false;
+  const o = value as Record<string, unknown>;
+  if (typeof o.commandId !== "string" || o.commandId.length === 0) return false;
+  if (typeof o.status !== "string" || !VALID_COMMAND_STATUSES.has(o.status)) return false;
+  if (o.acknowledged_at != null && typeof o.acknowledged_at !== "string") return false;
+  if (o.error_message != null && typeof o.error_message !== "string") return false;
+  return true;
+}
+
+export function applyCommandStatusUpdate(mutate: ScopedMutator, raw: unknown): void {
+  if (!isCommandStatusUpdate(raw)) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[ws] discarded malformed command_status_update", raw); // dev: untrusted inbound payload
+    }
+    return;
+  }
+  const update = raw;
   void mutate(
     (key: unknown): boolean =>
       typeof key === "string" && key.startsWith("/api/commands"),

@@ -10,7 +10,6 @@ import {
   applyDeviceUpdate,
   applyCommandStatusUpdate,
 } from "@/lib/swr/wsCacheBridge";
-import type { CommandStatusUpdate } from "@/lib/ws/types";
 
 const RESYNC_DEBOUNCE_MS = 30_000;
 
@@ -28,8 +27,8 @@ export function WsCacheBridge(): null {
       client.on<unknown>("vision_update", (raw) => applyVisionUpdate(mutate, raw)),
       client.on<unknown>("event_notification", (raw) => applyEventUpdate(mutate, raw)),
       client.on<unknown>("device_status_update", (raw) => applyDeviceUpdate(mutate, raw)),
-      client.on<CommandStatusUpdate>("command_status_update", (update) =>
-        applyCommandStatusUpdate(mutate, update)
+      client.on<unknown>("command_status_update", (raw) =>
+        applyCommandStatusUpdate(mutate, raw)
       ),
     ];
     return () => {
