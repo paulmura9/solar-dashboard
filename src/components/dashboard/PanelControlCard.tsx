@@ -12,7 +12,7 @@ interface PanelControlCardProps {
   isStale: boolean;
   isCommandCooldown: (type: CommandType) => boolean;
   onDirection: (dir: CommandDirection) => void;
-  onSetMode: (mode: string) => void;
+  onSetMode: (mode: TrackingMode) => void;
   onReset: () => void;
 }
 

@@ -5,7 +5,7 @@ import { mutate as globalMutate } from "swr";
 import { createCommand } from "@/lib/api";
 import { buildMovePanelPayload } from "@/lib/solar/commands";
 import type { MovePanelTarget } from "@/lib/solar/commands";
-import type { CommandType, CommandDirection, DeviceCommand } from "@/lib/types";
+import type { CommandType, CommandDirection, DeviceCommand, TrackingMode } from "@/lib/types";
 
 const COOLDOWN_COMMANDS = new Set<CommandType>(["RESET_POSITION"]);
 const COOLDOWN_MS = 2_000;
@@ -34,10 +34,11 @@ interface PanelCommandsReturn {
   lastResult: CommandResult | null;
   isCommandCooldown: (type: CommandType) => boolean;
   movePanel: (dir: CommandDirection, currentH: number, currentV: number) => Promise<MovePanelTarget | null>;
-  setMode: (mode: string) => Promise<void>;
+  setMode: (mode: TrackingMode) => Promise<void>;
   resetPosition: () => Promise<void>;
   startTracking: () => Promise<void>;
   stopTracking: () => Promise<void>;
+  requestStatus: () => Promise<void>;
 }
 
 export function usePanelCommands(token: string | null): PanelCommandsReturn {
@@ -121,10 +122,11 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
     [dispatch]
   );
 
-  const setMode       = useCallback((mode: string) => dispatch("SET_MODE", { mode }), [dispatch]);
+  const setMode       = useCallback((mode: TrackingMode) => dispatch("SET_MODE", { mode }), [dispatch]);
   const resetPosition = useCallback(() => dispatch("RESET_POSITION"), [dispatch]);
   const startTracking = useCallback(() => dispatch("START_TRACKING"),  [dispatch]);
   const stopTracking  = useCallback(() => dispatch("STOP_TRACKING"),   [dispatch]);
+  const requestStatus = useCallback(() => dispatch("REQUEST_STATUS"),  [dispatch]);
 
   return {
     sending: sendingCount > 0,
@@ -135,5 +137,6 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
     resetPosition,
     startTracking,
     stopTracking,
+    requestStatus,
   };
 }

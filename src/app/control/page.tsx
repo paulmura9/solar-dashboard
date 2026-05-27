@@ -18,7 +18,7 @@ import { useCommands } from "@/hooks/api/useCommands";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { ControlSkeleton } from "@/components/skeletons/ControlSkeleton";
 import { getCommandLabel } from "@/lib/solar/commands";
-import type { CommandStatus, CommandDirection } from "@/lib/types";
+import type { CommandStatus, CommandDirection, TrackingMode } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const OPTIMISTIC_REVERT_MS = 3_000;
@@ -56,7 +56,7 @@ export default function ControlPage() {
     setOptimisticTarget(null);
   }, []);
 
-  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
+  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, requestStatus, isCommandCooldown } =
     usePanelCommands(token);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
@@ -87,7 +87,7 @@ export default function ControlPage() {
     }, OPTIMISTIC_REVERT_MS);
   };
 
-  const handleSetMode = (mode: string): void => {
+  const handleSetMode = (mode: TrackingMode): void => {
     clearOptimistic();
     void setMode(mode);
   };
@@ -171,6 +171,15 @@ export default function ControlPage() {
                 title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
               >
                 Stop Tracking
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-[#e2e8f0] text-[#64748b] hover:border-[#94a3b8] text-sm font-medium"
+                onClick={() => { void requestStatus(); }}
+                disabled={sending || !esp32Online}
+                title="Ask the device to report its current status"
+              >
+                Request Status
               </Button>
 
               {lastResult && (
