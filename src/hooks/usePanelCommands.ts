@@ -1,14 +1,28 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { mutate as globalMutate } from "swr";
 import { createCommand } from "@/lib/api";
 import { buildMovePanelPayload } from "@/lib/solar/commands";
 import type { MovePanelTarget } from "@/lib/solar/commands";
-import type { CommandType, CommandDirection } from "@/lib/types";
+import type { CommandType, CommandDirection, DeviceCommand } from "@/lib/types";
 
 const COOLDOWN_COMMANDS = new Set<CommandType>(["RESET_POSITION"]);
 const COOLDOWN_MS = 2_000;
 const MOVE_THROTTLE_MS = 200; // 5 commands/second per direction
+const COMMAND_HISTORY_CAP = 50;
+
+function insertOptimisticCommand(row: DeviceCommand): void {
+  void globalMutate(
+    (key: unknown): boolean => typeof key === "string" && key.startsWith("/api/commands"),
+    (current: { data: DeviceCommand[] } | undefined): { data: DeviceCommand[] } | undefined => {
+      if (!current?.data) return current;
+      const without = current.data.filter((c) => c.id !== row.id);
+      return { data: [row, ...without].slice(0, COMMAND_HISTORY_CAP) };
+    },
+    { revalidate: false }
+  );
+}
 
 interface CommandResult {
   ok: boolean;
@@ -57,11 +71,25 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
     } finally {
       setSendingCount((c) => c - 1);
     }
+    if (result.success) {
+      const nowIso = new Date().toISOString();
+      insertOptimisticCommand({
+        id: result.commandId,
+        command_type: type,
+        payload,
+        status: result.status,
+        error_message: null,
+        ack_payload: {},
+        created_at: nowIso,
+        sent_at: result.status === "SENT" ? nowIso : null,
+        acknowledged_at: null,
+      });
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     setLastResult(
       result.success
         ? { ok: true, message: "Command queued - awaiting acknowledgement" }
-        : { ok: false, message: result.error ?? "Failed to send command" }
+        : { ok: false, message: result.error }
     );
     timerRef.current = setTimeout(() => setLastResult(null), 4_000);
 
