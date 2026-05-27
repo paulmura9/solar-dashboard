@@ -113,42 +113,42 @@ interface ApiResponse<T> {
 }
 
 export async function getLatestReading(token: string): Promise<SensorReading | null> {
-  const result = await apiFetch<ApiResponse<unknown>>("/api/readings/latest", token);
-  if (!result?.data) return null;
-  return mapReading(result.data);
+  const res = await apiFetch<ApiResponse<unknown>>("/api/readings/latest", token);
+  if (!res.ok || !res.data?.data) return null;
+  return mapReading(res.data.data);
 }
 
 export async function getReadingsHistory(token: string, hours = 24): Promise<SensorReading[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>(
+  const res = await apiFetch<ApiResponse<unknown[]>>(
     `/api/readings/history?hours=${hours}&limit=500`,
     token
   );
-  if (!Array.isArray(result?.data)) return [];
-  return result.data.map(mapReading);
+  if (!res.ok || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map(mapReading);
 }
 
 export async function getLatestVision(token: string): Promise<VisionResult | null> {
-  const result = await apiFetch<ApiResponse<unknown>>("/api/vision/latest", token);
-  if (!result?.data) return null;
-  return mapVision(result.data);
+  const res = await apiFetch<ApiResponse<unknown>>("/api/vision/latest", token);
+  if (!res.ok || !res.data?.data) return null;
+  return mapVision(res.data.data);
 }
 
 export async function getVisionHistory(token: string): Promise<VisionResult[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>("/api/vision/history", token);
-  if (!Array.isArray(result?.data)) return [];
-  return result.data.map(mapVision);
+  const res = await apiFetch<ApiResponse<unknown[]>>("/api/vision/history", token);
+  if (!res.ok || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map(mapVision);
 }
 
 export async function getRecentEvents(token: string, limit = 20): Promise<SystemEvent[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>(`/api/events?limit=${limit}`, token);
-  if (!Array.isArray(result?.data)) return [];
-  return result.data.map(mapEvent);
+  const res = await apiFetch<ApiResponse<unknown[]>>(`/api/events?limit=${limit}`, token);
+  if (!res.ok || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map(mapEvent);
 }
 
 export async function getDevices(token: string): Promise<DeviceStatus[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>("/api/devices", token);
-  if (!Array.isArray(result?.data)) return [];
-  return result.data.map(mapDevice);
+  const res = await apiFetch<ApiResponse<unknown[]>>("/api/devices", token);
+  if (!res.ok || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map(mapDevice);
 }
 
 export interface CreateCommandPayload {
@@ -156,23 +156,37 @@ export interface CreateCommandPayload {
   payload: Record<string, unknown>;
 }
 
+export type CreateCommandResult =
+  | { success: true; commandId: string; status: "PENDING" | "SENT" }
+  | { success: false; error: string };
+
 export async function createCommand(
   token: string,
   command: CreateCommandPayload
-): Promise<{ success: boolean; error?: string }> {
-  const result = await apiFetch<ApiResponse<unknown>>(
+): Promise<CreateCommandResult> {
+  const res = await apiFetch<ApiResponse<RawJson>>(
     "/api/commands",
     token,
     { method: "POST", body: JSON.stringify(command) }
   );
-  if (!result) return { success: false, error: "Request failed" };
-  return { success: true };
+  if (!res.ok) return { success: false, error: res.error };
+
+  const body = res.data?.data as { id?: unknown; status?: unknown } | undefined;
+  const id = body?.id;
+  const status = body?.status;
+  if (typeof id !== "string" || (status !== "PENDING" && status !== "SENT")) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("createCommand: unexpected response shape", res.data); // dev: contract drift with backend
+    }
+    return { success: false, error: "Invalid response" };
+  }
+  return { success: true, commandId: id, status };
 }
 
 export async function getRecentCommands(token: string, limit = 10): Promise<DeviceCommand[]> {
-  const result = await apiFetch<ApiResponse<unknown[]>>(`/api/commands?limit=${limit}`, token);
-  if (!Array.isArray(result?.data)) return [];
-  return result.data.map(mapCommand);
+  const res = await apiFetch<ApiResponse<unknown[]>>(`/api/commands?limit=${limit}`, token);
+  if (!res.ok || !Array.isArray(res.data?.data)) return [];
+  return res.data.data.map(mapCommand);
 }
 
 export async function getSunToday(): Promise<WeatherData | null> {
