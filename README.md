@@ -16,6 +16,23 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Required environment variables
+
+Copy `.env.example` to `.env.local` for local development, and set the same
+values in the Vercel project settings for deployment. The command flow and
+live updates will not work unless both of the following are present:
+
+```
+NEXT_PUBLIC_API_URL=https://solar-api-production-da12.up.railway.app
+NEXT_PUBLIC_WS_URL=wss://solar-api-production-da12.up.railway.app/ws/client
+```
+
+`NEXT_PUBLIC_API_URL` is the Express REST backend (commands and history).
+`NEXT_PUBLIC_WS_URL` is the WebSocket endpoint that pushes telemetry and
+command status updates; if it is missing the dashboard still loads but the
+command table never transitions past PENDING in real time, and a warning is
+logged to the browser console at startup.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
