@@ -34,7 +34,6 @@ export async function fetcher<T>(key: string): Promise<T> {
 
   const res = await fetch(buildUrl(key), {
     headers,
-    credentials: "include",
   });
 
   if (res.status === 401) {
