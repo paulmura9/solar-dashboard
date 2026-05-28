@@ -115,7 +115,7 @@ export default function ControlPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-10">
+            <div className="flex flex-col md:flex-row items-stretch justify-center gap-10">
               <ElevationView elevationAngle={displayV} />
               <AzimuthView azimuthAngle={displayH} />
             </div>

@@ -12,6 +12,7 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Elevation</p>
+      <div className="flex-1 flex items-center justify-center">
       <svg
         width="300"
         height="220"
@@ -53,6 +54,7 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
           90°
         </text>
       </svg>
+      </div>
 
       <p className="text-xs text-[#64748b]">
         Elevation:{" "}

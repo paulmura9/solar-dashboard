@@ -3,12 +3,10 @@ import WbCloudy from "@mui/icons-material/WbCloudy";
 import { Clock, Sunrise, Sunset } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSunTime } from "@/lib/solar/weather";
-import MetricRow from "./MetricRow";
 import type { WeatherData, WeatherStatus } from "@/lib/types";
 
 interface WeatherDataCardProps {
   data: WeatherData | null;
-  ambientLux: number | null;
 }
 
 const CONDITION_NOTES: Record<WeatherStatus, string> = {
@@ -45,7 +43,7 @@ function formatDaylight(sunrise: string, sunset: string): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
-const WeatherDataCard: FC<WeatherDataCardProps> = ({ data, ambientLux }) => {
+const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
   const status = data?.weatherStatus ?? "UNKNOWN";
   const note = CONDITION_NOTES[status];
 
@@ -58,11 +56,6 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data, ambientLux }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <MetricRow
-          label="Ambient light"
-          value={ambientLux != null ? `${ambientLux.toFixed(0)} lux` : "—"}
-        />
-
         <div className="space-y-1.5">
           {data ? (
             <>

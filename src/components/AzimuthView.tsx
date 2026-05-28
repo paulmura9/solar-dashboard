@@ -12,6 +12,7 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Azimuth</p>
+      <div className="flex-1 flex items-center justify-center">
       <svg width="180" height="180" viewBox="0 0 180 180">
         <circle cx="90" cy="90" r="80" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />
         <circle cx="90" cy="90" r="72" fill="none" stroke="#f1f5f9" strokeWidth="0.5" />
@@ -41,20 +42,20 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
         <text x="154" y="94" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">90°</text>
         <text x="26" y="94" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">270°</text>
 
-        <g transform="translate(90, 90)">
-          <motion.g
-            animate={{ rotate: azimuthAngle }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-          >
-            <line x1="0" y1="0" x2="0" y2="-58" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-            <polygon points="-5,-50 0,-68 5,-50" fill="#3b82f6" />
-            <line x1="0" y1="0" x2="0" y2="22" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
-          </motion.g>
-        </g>
+        <motion.g
+          style={{ transformBox: "view-box", transformOrigin: "90px 90px" }}
+          animate={{ rotate: azimuthAngle }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+        >
+          <line x1="90" y1="90" x2="90" y2="42" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+          <polygon points="85,50 90,32 95,50" fill="#3b82f6" />
+          <line x1="90" y1="90" x2="90" y2="112" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+        </motion.g>
 
         <circle cx="90" cy="90" r="5" fill="#3b82f6" />
         <circle cx="90" cy="90" r="2.5" fill="#ffffff" />
       </svg>
+      </div>
 
       <p className="text-xs text-[#64748b]">
         Azimuth:{" "}

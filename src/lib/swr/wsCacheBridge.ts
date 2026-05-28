@@ -7,10 +7,61 @@ import type { CommandStatusUpdate } from "@/lib/ws/types";
 
 const REVALIDATE_OFF = { revalidate: false } as const;
 
+// Merge a freshly-mapped reading over the previously cached one, field by field.
+// Rule: keep the previous value whenever the incoming nullable field is null/undefined,
+// so a live telemetry frame that omits a field (or whose sensor is momentarily offline)
+// never wipes a previously-good value to null and blanks its card.
+//
+// Limitation: mapReading() collapses both "field absent from the WS payload" and
+// "field explicitly null in the payload" into null, so the two cannot be told apart
+// here. We deliberately favor showing the last known real value over blanking the UI:
+// an explicit null (e.g. solar_current when the INA219 is offline) will be ignored and
+// the prior value retained. This is acceptable because this merge is a safety net — the
+// backend now sends real values on every frame; it only guards against dropped fields.
+//
+// The seven non-nullable fields (identity + always-present servo/mode state) are taken
+// straight from the incoming frame: the telemetry schema requires them on every frame.
+function mergeReading(prev: SensorReading, next: SensorReading): SensorReading {
+  return {
+    id:                          next.id,
+    timestamp:                   next.timestamp,
+    horizontal_angle:            next.horizontal_angle,
+    vertical_angle:              next.vertical_angle,
+    tracking_mode:               next.tracking_mode,
+    is_moving:                   next.is_moving,
+    ldr_top_left:                next.ldr_top_left ?? prev.ldr_top_left,
+    ldr_top_right:               next.ldr_top_right ?? prev.ldr_top_right,
+    ldr_bottom_left:             next.ldr_bottom_left ?? prev.ldr_bottom_left,
+    ldr_bottom_right:            next.ldr_bottom_right ?? prev.ldr_bottom_right,
+    horizontal_light_difference: next.horizontal_light_difference ?? prev.horizontal_light_difference,
+    vertical_light_difference:   next.vertical_light_difference ?? prev.vertical_light_difference,
+    battery_voltage:             next.battery_voltage ?? prev.battery_voltage,
+    battery_percent:             next.battery_percent ?? prev.battery_percent,
+    battery_status:              next.battery_status ?? prev.battery_status,
+    solar_voltage:               next.solar_voltage ?? prev.solar_voltage,
+    solar_current:               next.solar_current ?? prev.solar_current,
+    solar_power:                 next.solar_power ?? prev.solar_power,
+    solar_energy_today_wh:       next.solar_energy_today_wh ?? prev.solar_energy_today_wh,
+    charging_voltage:            next.charging_voltage ?? prev.charging_voltage,
+    charging_current:            next.charging_current ?? prev.charging_current,
+    charging_power:              next.charging_power ?? prev.charging_power,
+    charged_energy_today_wh:     next.charged_energy_today_wh ?? prev.charged_energy_today_wh,
+    ambient_light_lux:           next.ambient_light_lux ?? prev.ambient_light_lux,
+    created_at:                  next.created_at,
+  };
+}
+
 export function applyTelemetryUpdate(mutate: ScopedMutator, raw: unknown): void {
   const reading = mapReading(raw);
 
-  void mutate(apiKeys.latestReading, { data: reading }, REVALIDATE_OFF);
+  void mutate(
+    apiKeys.latestReading,
+    (current: ApiEnvelope<unknown> | undefined): ApiEnvelope<SensorReading> => {
+      const existing = current?.data as SensorReading | undefined;
+      return { data: existing ? mergeReading(existing, reading) : reading };
+    },
+    REVALIDATE_OFF
+  );
 
   void mutate(
     (key: unknown): boolean =>

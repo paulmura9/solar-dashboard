@@ -113,7 +113,7 @@ export default function OverviewPage() {
           <BatteryCard reading={latest} />
           <TrackingStatusCard data={panelStatus} vision={vision} />
           <LightSensorsCard data={panelStatus?.lightSensors ?? null} />
-          <WeatherDataCard data={weatherData} ambientLux={latest?.ambient_light_lux ?? null} />
+          <WeatherDataCard data={weatherData} />
         </div>
       </ErrorBoundary>
 
