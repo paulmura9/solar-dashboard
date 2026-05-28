@@ -7,6 +7,7 @@ import { ShimmerButton } from "@/components/magic/ShimmerButton";
 import { useDevices } from "@/hooks/api/useDevices";
 import { LiveSkeleton } from "@/components/skeletons/LiveSkeleton";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
+import { STATUS_BADGE_OK, STATUS_BADGE_ERROR } from "@/lib/ui/statusBadgeStyle";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function LiveCameraPage() {
@@ -28,11 +29,7 @@ export default function LiveCameraPage() {
             <span className="text-[#64748b]">Camera:</span>
             <Badge
               variant="outline"
-              style={
-                cameraOnline
-                  ? { background: "#dcfce7", color: "#166534", borderColor: "#bbf7d0" }
-                  : { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" }
-              }
+              style={cameraOnline ? STATUS_BADGE_OK : STATUS_BADGE_ERROR}
             >
               {cameraOnline ? "Online" : "Offline"}
             </Badge>
@@ -46,11 +43,7 @@ export default function LiveCameraPage() {
             <span className="text-[#64748b]">Gateway:</span>
             <Badge
               variant="outline"
-              style={
-                piOnline
-                  ? { background: "#dcfce7", color: "#166534", borderColor: "#bbf7d0" }
-                  : { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" }
-              }
+              style={piOnline ? STATUS_BADGE_OK : STATUS_BADGE_ERROR}
             >
               {piOnline ? "Connected" : "Disconnected"}
             </Badge>

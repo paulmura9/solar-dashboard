@@ -6,7 +6,6 @@ import { LogOut } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { signOutCompletely } from "@/lib/auth/signOut";
-import ConnectionStatusBadge from "@/components/ConnectionStatusBadge";
 
 const supabase = getSupabaseBrowserClient();
 
@@ -61,8 +60,6 @@ export default function TopBar() {
       <h2 className="text-base font-bold text-[#1e293b]" suppressHydrationWarning>{title}</h2>
 
       <div className="flex items-center gap-4">
-        <ConnectionStatusBadge />
-
         <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setOpen((v) => !v)}

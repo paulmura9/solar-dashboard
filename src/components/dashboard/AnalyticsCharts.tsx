@@ -7,11 +7,8 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnalyticsSeries } from "@/lib/charts/transformReadings";
-
-const TOOLTIP_STYLE = {
-  contentStyle: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 11, fontFamily: "inherit" },
-  labelStyle: { color: "#64748b" },
-};
+import { TOOLTIP_STYLE } from "@/lib/charts/chartStyles";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
 
 const CHART_H = 300;
 
@@ -72,7 +69,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
               <LineChart data={series.angles}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[0, 180]} />
+                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[SOLAR_CONFIG.panel.minAngle, SOLAR_CONFIG.panel.maxAngle]} />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
                 <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />

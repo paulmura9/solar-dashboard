@@ -12,6 +12,7 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { dirtColor } from "@/lib/solar/status";
 import { formatPower } from "@/lib/solar/energy";
 import { DirtDetectionSkeleton } from "@/components/skeletons/DirtDetectionSkeleton";
+import { STATUS_BADGE_OK, STATUS_BADGE_ERROR } from "@/lib/ui/statusBadgeStyle";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function dirtIcon(pct: number, cleaning: boolean) {
@@ -254,11 +255,7 @@ export default function DirtDetectionPage() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          style={
-                            v.cleaning_required
-                              ? { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" }
-                              : { background: "#dcfce7", color: "#166534", borderColor: "#bbf7d0" }
-                          }
+                          style={v.cleaning_required ? STATUS_BADGE_ERROR : STATUS_BADGE_OK}
                         >
                           {v.cleaning_required ? "Required" : "Clean"}
                         </Badge>

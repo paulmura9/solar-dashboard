@@ -1,6 +1,5 @@
 import type { ScopedMutator } from "swr";
 import { mapReading, mapVision, mapEvent, mapDevice } from "@/lib/api";
-import { mapCommand } from "@/hooks/api/useCommands";
 import { apiKeys } from "@/types/api";
 import { PERF_CONFIG } from "@/config/perfConfig";
 import type { ApiEnvelope, SensorReading, VisionResult, SystemEvent, DeviceStatus, DeviceCommand } from "@/types/api";
@@ -120,5 +119,3 @@ export function applyCommandStatusUpdate(mutate: ScopedMutator, raw: unknown): v
     REVALIDATE_OFF
   );
 }
-
-export { mapCommand };

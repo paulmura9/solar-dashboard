@@ -93,7 +93,7 @@ export function mapDevice(d: unknown): DeviceStatus {
   };
 }
 
-function mapCommand(d: unknown): DeviceCommand {
+export function mapCommand(d: unknown): DeviceCommand {
   const o = asRecord(d);
   return {
     id:              o.id as string,
@@ -112,51 +112,12 @@ interface ApiResponse<T> {
   data: T;
 }
 
-export async function getLatestReading(token: string): Promise<SensorReading | null> {
-  const res = await apiFetch<ApiResponse<unknown>>("/api/readings/latest", token);
-  if (!res.ok || !res.data?.data) return null;
-  return mapReading(res.data.data);
-}
-
-export async function getReadingsHistory(token: string, hours = 24): Promise<SensorReading[]> {
-  const res = await apiFetch<ApiResponse<unknown[]>>(
-    `/api/readings/history?hours=${hours}&limit=500`,
-    token
-  );
-  if (!res.ok || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapReading);
-}
-
-export async function getLatestVision(token: string): Promise<VisionResult | null> {
-  const res = await apiFetch<ApiResponse<unknown>>("/api/vision/latest", token);
-  if (!res.ok || !res.data?.data) return null;
-  return mapVision(res.data.data);
-}
-
-export async function getVisionHistory(token: string): Promise<VisionResult[]> {
-  const res = await apiFetch<ApiResponse<unknown[]>>("/api/vision/history", token);
-  if (!res.ok || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapVision);
-}
-
-export async function getRecentEvents(token: string, limit = 20): Promise<SystemEvent[]> {
-  const res = await apiFetch<ApiResponse<unknown[]>>(`/api/events?limit=${limit}`, token);
-  if (!res.ok || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapEvent);
-}
-
-export async function getDevices(token: string): Promise<DeviceStatus[]> {
-  const res = await apiFetch<ApiResponse<unknown[]>>("/api/devices", token);
-  if (!res.ok || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapDevice);
-}
-
-export interface CreateCommandPayload {
+interface CreateCommandPayload {
   command_type: CommandType;
   payload: Record<string, unknown>;
 }
 
-export type CreateCommandResult =
+type CreateCommandResult =
   | { success: true; commandId: string; status: "PENDING" | "SENT" }
   | { success: false; error: string };
 
@@ -181,12 +142,6 @@ export async function createCommand(
     return { success: false, error: "Invalid response" };
   }
   return { success: true, commandId: id, status };
-}
-
-export async function getRecentCommands(token: string, limit = 10): Promise<DeviceCommand[]> {
-  const res = await apiFetch<ApiResponse<unknown[]>>(`/api/commands?limit=${limit}`, token);
-  if (!res.ok || !Array.isArray(res.data?.data)) return [];
-  return res.data.data.map(mapCommand);
 }
 
 export async function getSunToday(): Promise<WeatherData | null> {

@@ -29,7 +29,7 @@ import type { DeviceStatus, Severity } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const DEVICE_DISPLAY: Record<string, { label: string; icon: React.ElementType; iconBg: string; iconColor: string }> = {
-  ESP32:        { label: "ESP32",        icon: Cpu,    iconBg: "bg-amber-50",  iconColor: "text-amber-600"  },
+  ESP32:        { label: "ESP32",        icon: Cpu,    iconBg: "bg-slate-100", iconColor: "text-slate-800"  },
   RASPBERRY_PI: { label: "Raspberry Pi", icon: Server, iconBg: "bg-green-50",  iconColor: "text-green-600"  },
   CAMERA:       { label: "Camera",       icon: Camera, iconBg: "bg-blue-50",   iconColor: "text-blue-600"   },
 };
