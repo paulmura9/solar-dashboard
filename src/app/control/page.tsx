@@ -236,7 +236,9 @@ export default function ControlPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {commands.map((cmd) => (
+                  {commands.map((cmd, index) => {
+                    const previousCmd = commands[index + 1]; // list is newest-first; previous = older row
+                    return (
                     <TableRow key={cmd.id} className="border-[#e2e8f0] text-xs">
                       <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
                         {new Date(cmd.created_at).toLocaleString("ro-RO", {
@@ -245,7 +247,7 @@ export default function ControlPage() {
                         })}
                       </TableCell>
                       <TableCell className="font-medium text-[#1e293b]">
-                        {formatCommandLabel(cmd)}
+                        {formatCommandLabel(cmd, previousCmd)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" style={STATUS_STYLE[cmd.status]}>
@@ -260,7 +262,8 @@ export default function ControlPage() {
                             : "—"}
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

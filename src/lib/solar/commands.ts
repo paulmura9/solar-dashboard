@@ -33,17 +33,40 @@ export function getCommandLabel(commandType: CommandType): string {
   }
 }
 
-export function formatCommandLabel(cmd: DeviceCommand): string {
+const HOME_ANGLE = 90;
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+export function formatCommandLabel(cmd: DeviceCommand, previousCmd?: DeviceCommand): string {
   const base = getCommandLabel(cmd.command_type);
   const payload = cmd.payload ?? {};
 
   if (cmd.command_type === "MOVE_PANEL") {
-    const h = payload.h_angle;
-    const v = payload.v_angle;
-    if (typeof h === "number" && typeof v === "number") {
-      return `${base} → H:${h}° V:${v}°`;
-    }
-    return base;
+    const h = toNumber(payload.h_angle);
+    const v = toNumber(payload.v_angle);
+    if (h === null || v === null) return base;
+
+    const prevPayload = previousCmd?.command_type === "MOVE_PANEL" ? previousCmd.payload ?? {} : null;
+    const prevH = (prevPayload && toNumber(prevPayload.h_angle)) ?? HOME_ANGLE;
+    const prevV = (prevPayload && toNumber(prevPayload.v_angle)) ?? HOME_ANGLE;
+
+    const dh = h - prevH;
+    const dv = v - prevV;
+    const parts: string[] = [];
+    if (dv > 0) parts.push("Up");
+    if (dv < 0) parts.push("Down");
+    if (dh > 0) parts.push("Right");
+    if (dh < 0) parts.push("Left");
+    const direction = parts.length > 0 ? parts.join(" + ") : "Hold";
+
+    return `${base} → ${direction} (H:${h}° V:${v}°)`;
   }
 
   if (cmd.command_type === "SET_MODE") {
