@@ -3,9 +3,9 @@ export function formatVoltage(v: number | null): string {
   return `${v.toFixed(2)} V`;
 }
 
-export function formatCurrent(a: number | null): string {
-  if (a == null) return "—";
-  return `${a.toFixed(3)} A`;
+export function formatCurrentMa(ma: number | null): string {
+  if (ma == null) return "—";
+  return `${ma.toFixed(1)} mA`;
 }
 
 export function formatEnergy(wh: number | null): string {
