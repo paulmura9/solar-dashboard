@@ -41,9 +41,9 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
             animate={{ rotate: azimuthAngle }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
           >
-            <line x1="0" y1="8" x2="0" y2="-58" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="0" y1="0" x2="0" y2="-58" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
             <polygon points="-5,-50 0,-68 5,-50" fill="#3b82f6" />
-            <line x1="0" y1="8" x2="0" y2="22" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="0" x2="0" y2="22" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
           </motion.g>
         </g>
 

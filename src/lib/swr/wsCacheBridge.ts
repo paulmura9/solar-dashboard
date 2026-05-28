@@ -83,7 +83,7 @@ const VALID_COMMAND_STATUSES: ReadonlySet<string> = new Set(["PENDING", "SENT", 
 function isCommandStatusUpdate(value: unknown): value is CommandStatusUpdate {
   if (typeof value !== "object" || value === null) return false;
   const o = value as Record<string, unknown>;
-  if (typeof o.commandId !== "string" || o.commandId.length === 0) return false;
+  if (typeof o.id !== "string" || o.id.length === 0) return false;
   if (typeof o.status !== "string" || !VALID_COMMAND_STATUSES.has(o.status)) return false;
   if (o.acknowledged_at != null && typeof o.acknowledged_at !== "string") return false;
   if (o.error_message != null && typeof o.error_message !== "string") return false;
@@ -105,7 +105,7 @@ export function applyCommandStatusUpdate(mutate: ScopedMutator, raw: unknown): v
       if (!current || !Array.isArray(current.data)) return current;
       const existing = current.data as DeviceCommand[];
       const next = existing.map((c) =>
-        c.id === update.commandId
+        c.id === update.id
           ? {
               ...c,
               status: update.status,
