@@ -36,6 +36,11 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
         <text x="170" y="94" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">E</text>
         <text x="10" y="94" textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">W</text>
 
+        <text x="90" y="24" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">0°</text>
+        <text x="90" y="164" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">180°</text>
+        <text x="154" y="94" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">90°</text>
+        <text x="26" y="94" textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">270°</text>
+
         <g transform="translate(90, 90)">
           <motion.g
             animate={{ rotate: azimuthAngle }}
