@@ -2,8 +2,8 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 import type { CommandType, CommandDirection } from "@/lib/types";
 
 export interface MovePanelTarget {
-  horizontal_angle: number;
-  vertical_angle: number;
+  h_angle: number;
+  v_angle: number;
 }
 
 export function buildMovePanelPayload(
@@ -19,7 +19,7 @@ export function buildMovePanelPayload(
   if (direction === "RIGHT") h = Math.min(maxAngle, h + step);
   if (direction === "UP")    v = Math.min(maxAngle, v + step);
   if (direction === "DOWN")  v = Math.max(minAngle, v - step);
-  return { horizontal_angle: h, vertical_angle: v };
+  return { h_angle: h, v_angle: v };
 }
 
 export function getCommandLabel(commandType: CommandType): string {

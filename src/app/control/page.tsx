@@ -79,7 +79,7 @@ export default function ControlPage() {
   const handleDirection = async (dir: CommandDirection): Promise<void> => {
     const target = await movePanel(dir, displayH, displayV);
     if (!target) return;
-    setOptimisticTarget({ h: target.horizontal_angle, v: target.vertical_angle });
+    setOptimisticTarget({ h: target.h_angle, v: target.v_angle });
     if (optimisticRevertRef.current) clearTimeout(optimisticRevertRef.current);
     optimisticRevertRef.current = setTimeout(() => {
       optimisticRevertRef.current = null;
