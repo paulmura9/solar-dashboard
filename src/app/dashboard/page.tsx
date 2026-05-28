@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Cpu, Server, Camera, Radio } from "lucide-react";
+import { Cpu, Server, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,14 +32,12 @@ const DEVICE_DISPLAY: Record<string, { label: string; icon: React.ElementType; i
   ESP32:        { label: "ESP32",        icon: Cpu,    iconBg: "bg-amber-50",  iconColor: "text-amber-600"  },
   RASPBERRY_PI: { label: "Raspberry Pi", icon: Server, iconBg: "bg-green-50",  iconColor: "text-green-600"  },
   CAMERA:       { label: "Camera",       icon: Camera, iconBg: "bg-blue-50",   iconColor: "text-blue-600"   },
-  MQTT_BROKER:  { label: "MQTT Broker",  icon: Radio,  iconBg: "bg-violet-50", iconColor: "text-violet-600" },
 };
 
 const OFFLINE_PLACEHOLDER_DEVICES: DeviceStatus[] = [
   { id: -1, device_name: "ESP32",        is_online: false, last_seen: null, firmware_version: null, status_message: null, updated_at: "" },
   { id: -2, device_name: "RASPBERRY_PI", is_online: false, last_seen: null, firmware_version: null, status_message: null, updated_at: "" },
   { id: -3, device_name: "CAMERA",       is_online: false, last_seen: null, firmware_version: null, status_message: null, updated_at: "" },
-  { id: -4, device_name: "MQTT_BROKER",  is_online: false, last_seen: null, firmware_version: null, status_message: null, updated_at: "" },
 ];
 
 const SEVERITY_BADGE: Record<Severity, React.CSSProperties> = {
@@ -72,7 +70,8 @@ export default function OverviewPage() {
 
   if (latestInitial && devicesInitial) return <DashboardSkeleton />;
 
-  const displayDevices = devices.length > 0 ? devices : OFFLINE_PLACEHOLDER_DEVICES;
+  const displayDevices = (devices.length > 0 ? devices : OFFLINE_PLACEHOLDER_DEVICES)
+    .filter((d) => d.device_name !== "MQTT_BROKER");
   const isPlaceholderDevices = devices.length === 0;
 
   return (
@@ -80,7 +79,7 @@ export default function OverviewPage() {
       <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
 
       <ErrorBoundary>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {displayDevices.map((device, i) => {
             const meta = DEVICE_DISPLAY[device.device_name] ?? { label: device.device_name, icon: Cpu, iconBg: "bg-[#f1f5f9]", iconColor: "text-[#64748b]" };
             const Icon = meta.icon;
