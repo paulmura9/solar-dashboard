@@ -17,7 +17,7 @@ import { useDevices } from "@/hooks/api/useDevices";
 import { useCommands } from "@/hooks/api/useCommands";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import { ControlSkeleton } from "@/components/skeletons/ControlSkeleton";
-import { getCommandLabel } from "@/lib/solar/commands";
+import { formatCommandLabel } from "@/lib/solar/commands";
 import type { CommandStatus, CommandDirection, TrackingMode } from "@/lib/types";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -245,7 +245,7 @@ export default function ControlPage() {
                         })}
                       </TableCell>
                       <TableCell className="font-medium text-[#1e293b]">
-                        {getCommandLabel(cmd.command_type)}
+                        {formatCommandLabel(cmd)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" style={STATUS_STYLE[cmd.status]}>

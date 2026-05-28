@@ -1,5 +1,5 @@
 import { SOLAR_CONFIG } from "@/config/solarConfig";
-import type { CommandType, CommandDirection } from "@/lib/types";
+import type { CommandType, CommandDirection, DeviceCommand } from "@/lib/types";
 
 export interface MovePanelTarget {
   h_angle: number;
@@ -31,4 +31,28 @@ export function getCommandLabel(commandType: CommandType): string {
     case "START_TRACKING": return "Start Tracking";
     case "STOP_TRACKING":  return "Stop Tracking";
   }
+}
+
+export function formatCommandLabel(cmd: DeviceCommand): string {
+  const base = getCommandLabel(cmd.command_type);
+  const payload = cmd.payload ?? {};
+
+  if (cmd.command_type === "MOVE_PANEL") {
+    const h = payload.h_angle;
+    const v = payload.v_angle;
+    if (typeof h === "number" && typeof v === "number") {
+      return `${base} → H:${h}° V:${v}°`;
+    }
+    return base;
+  }
+
+  if (cmd.command_type === "SET_MODE") {
+    const mode = payload.mode;
+    if (typeof mode === "string" && mode.length > 0) {
+      return `${base} → ${mode}`;
+    }
+    return base;
+  }
+
+  return base;
 }
