@@ -4,6 +4,7 @@ import type {
   SystemEvent,
   DeviceStatus,
   DeviceCommand,
+  CameraCapture,
 } from "@/lib/types";
 
 export interface ApiEnvelope<T> {
@@ -17,6 +18,7 @@ export type VisionListEnvelope = ApiEnvelope<unknown[]>;
 export type EventListEnvelope = ApiEnvelope<unknown[]>;
 export type DeviceListEnvelope = ApiEnvelope<unknown[]>;
 export type CommandListEnvelope = ApiEnvelope<unknown[]>;
+export type CaptureEnvelope = ApiEnvelope<unknown>;
 
 export const apiKeys = {
   latestReading: "/api/readings/latest",
@@ -27,6 +29,7 @@ export const apiKeys = {
   events: (limit: number): string => `/api/events?limit=${limit}`,
   devices: "/api/devices",
   commands: (limit: number): string => `/api/commands?limit=${limit}`,
+  latestCapture: "/api/camera/latest",
 } as const;
 
 export type {
@@ -35,4 +38,5 @@ export type {
   SystemEvent,
   DeviceStatus,
   DeviceCommand,
+  CameraCapture,
 };

@@ -8,6 +8,7 @@ import type {
   SystemEvent,
   DeviceStatus,
   DeviceCommand,
+  CameraCapture,
   CommandType,
   WeatherData,
 } from "./types";
@@ -108,6 +109,17 @@ export function mapCommand(d: unknown): DeviceCommand {
   };
 }
 
+export function mapCapture(d: unknown): CameraCapture {
+  const o = asRecord(d);
+  return {
+    id:         o.id as number,
+    command_id: pick<string | null>(o, "commandId", "command_id"),
+    image_path: pick<string | null>(o, "imagePath", "image_path"),
+    timestamp:  o.timestamp as string,
+    created_at: pick<string>(o, "createdAt", "created_at"),
+  };
+}
+
 interface ApiResponse<T> {
   data: T;
 }
@@ -142,6 +154,29 @@ export async function createCommand(
     return { success: false, error: "Invalid response" };
   }
   return { success: true, commandId: id, status };
+}
+
+type CaptureRequestResult =
+  | { success: true; commandId: string }
+  | { success: false; error: string };
+
+export async function requestCameraCapture(token: string): Promise<CaptureRequestResult> {
+  const res = await apiFetch<ApiResponse<RawJson>>(
+    "/api/camera/capture",
+    token,
+    { method: "POST" }
+  );
+  if (!res.ok) return { success: false, error: res.error };
+
+  const body = res.data?.data as RawJson | undefined;
+  const id = body ? (body.id ?? body.commandId ?? body.command_id) : undefined;
+  if (typeof id !== "string") {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("requestCameraCapture: unexpected response shape", res.data); // dev: contract drift with backend
+    }
+    return { success: false, error: "Invalid response" };
+  }
+  return { success: true, commandId: id };
 }
 
 export async function getSunToday(): Promise<WeatherData | null> {

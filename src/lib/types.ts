@@ -44,6 +44,14 @@ export interface VisionResult {
   created_at: string;
 }
 
+export interface CameraCapture {
+  id: number;
+  command_id: string | null;
+  image_path: string | null;
+  timestamp: string;
+  created_at: string;
+}
+
 export interface SystemEvent {
   id: number;
   timestamp: string;

@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CheckCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, AlertTriangle, Camera, LoaderCircle, WifiOff, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLatestVision } from "@/hooks/api/useLatestVision";
 import { useVisionHistory } from "@/hooks/api/useVisionHistory";
+import { useLatestCapture } from "@/hooks/api/useLatestCapture";
+import { useDevices } from "@/hooks/api/useDevices";
+import { useCameraCapture } from "@/hooks/useCameraCapture";
+import { useApiToken } from "@/hooks/useApiToken";
 import { getSignedImageUrl } from "@/lib/api";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { dirtColor } from "@/lib/solar/status";
@@ -67,22 +72,35 @@ export default function DirtDetectionPage() {
     [rawHistory]
   );
 
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const token = useApiToken();
+  const { data: latestCapture } = useLatestCapture();
+  const { data: devices, isInitialLoad: devicesInitial } = useDevices();
+  const { phase, error: captureError, capture } = useCameraCapture(token);
+
+  const piOnline = devices.some((d) => d.device_name === "RASPBERRY_PI" && d.is_online);
+  const capturing = phase === "capturing";
+  const captureDisabled = !token || !piOnline || capturing || phase === "cooldown";
+
+  const [latestCaptureUrl, setLatestCaptureUrl] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const [imgUrl, procUrl] = await Promise.all([
-        latest?.image_path ? getSignedImageUrl(latest.image_path) : Promise.resolve(null),
-        latest?.processed_image_path ? getSignedImageUrl(latest.processed_image_path) : Promise.resolve(null),
-      ]);
-      if (cancelled) return;
-      setImageUrl(imgUrl);
-      setProcessedImageUrl(procUrl);
+      const url = latestCapture?.image_path ? await getSignedImageUrl(latestCapture.image_path) : null;
+      if (!cancelled) setLatestCaptureUrl(url);
     })();
     return () => { cancelled = true; };
-  }, [latest?.image_path, latest?.processed_image_path]);
+  }, [latestCapture?.image_path]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const url = latest?.processed_image_path ? await getSignedImageUrl(latest.processed_image_path) : null;
+      if (!cancelled) setProcessedImageUrl(url);
+    })();
+    return () => { cancelled = true; };
+  }, [latest?.processed_image_path]);
 
   if (latestInitial && historyInitial) return <DirtDetectionSkeleton />;
 
@@ -92,11 +110,32 @@ export default function DirtDetectionPage() {
     <ErrorBoundary>
       <div className="space-y-5">
         <Card className="border border-[#e2e8f0] ring-0">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold text-[#1e293b]">
               {latest && latest.dirt_level_percent != null && dirtIcon(latest.dirt_level_percent, latest.cleaning_required)}
               Dirt Detection — Latest Analysis
             </CardTitle>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#e2e8f0] hover:border-[#3b82f6] hover:text-[#3b82f6]"
+                disabled={captureDisabled}
+                onClick={() => void capture()}
+              >
+                {capturing ? <LoaderCircle className="animate-spin" /> : <Camera />}
+                {capturing ? "Capturing..." : "Capture Image"}
+              </Button>
+              {!devicesInitial && !piOnline ? (
+                <span className="text-[11px] text-[#94a3b8] flex items-center gap-1">
+                  <WifiOff size={11} /> Gateway offline
+                </span>
+              ) : captureError ? (
+                <span className="text-[11px] text-red-500 flex items-center gap-1 max-w-[220px] text-right">
+                  <AlertCircle size={11} className="shrink-0" /> {captureError}
+                </span>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {!latest ? (
@@ -192,8 +231,8 @@ export default function DirtDetectionPage() {
               <CardTitle className="text-sm font-semibold text-[#1e293b]">Last Captured Image</CardTitle>
             </CardHeader>
             <CardContent>
-              {imageUrl ? (
-                <ImageWithSkeleton key={imageUrl} src={imageUrl} alt="Panel surface capture" />
+              {latestCaptureUrl ? (
+                <ImageWithSkeleton key={latestCaptureUrl} src={latestCaptureUrl} alt="Panel surface capture" />
               ) : (
                 <div className="w-full h-48 rounded-lg bg-slate-100 flex flex-col items-center justify-center gap-2">
                   <span className="text-slate-400 text-sm">No image available</span>
