@@ -24,6 +24,12 @@ export const SOLAR_CONFIG = {
     nightThreshold: 100,
     lowLightThreshold: 500,
     balanceDeadband: 50,
+    // Per-sensor "this side is dark" threshold for the Night/Dark light-state indicator.
+    // Tune after LDR calibration; intentionally separate from lowLightThreshold.
+    darkThreshold: 500,
+    // |H/V diff| below this is treated as balanced noise (matches firmware LDR_DEADBAND);
+    // no direction arrow is shown within this band.
+    diffNeutralBand: 350,
   },
   battery: {
     goodPercent: 70,

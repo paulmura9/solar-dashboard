@@ -22,6 +22,7 @@ import LightSensorsCard from "@/components/dashboard/LightSensorsCard";
 import WeatherDataCard from "@/components/dashboard/WeatherDataCard";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
+import { computeLightState } from "@/lib/solar/lightState";
 import { transformDashboardChart } from "@/lib/charts/transformReadings";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { PERF_CONFIG } from "@/config/perfConfig";
@@ -62,6 +63,16 @@ export default function OverviewPage() {
   const weatherData = useWeatherData();
   const panelStatus = usePanelStatus(latest);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
+
+  // Frontend light-state interpretation (LDR majority vote + sun times). new Date() is
+  // re-evaluated on the 1s tick from useStaleTelemetry; weather is null until fetched
+  // client-side, so the initial SSR/hydration render is always UNKNOWN (no badge).
+  const lightState = computeLightState(
+    panelStatus?.lightSensors ?? null,
+    weatherData,
+    new Date(),
+    isStale
+  );
 
   const chartData = useMemo(
     () => transformDashboardChart(history, SOLAR_CONFIG.chart.downsampleDashboard),
@@ -125,7 +136,13 @@ export default function OverviewPage() {
           <SolarProductionCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <BatteryCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <TrackingStatusCard data={panelStatus} vision={vision} stale={isStale} secondsAgo={secondsSinceLastReading} />
-          <LightSensorsCard data={panelStatus?.lightSensors ?? null} stale={isStale} secondsAgo={secondsSinceLastReading} />
+          <LightSensorsCard
+            data={panelStatus?.lightSensors ?? null}
+            stale={isStale}
+            secondsAgo={secondsSinceLastReading}
+            lightState={lightState}
+            deviceInNight={panelStatus?.mode === "NIGHT"}
+          />
           <WeatherDataCard data={weatherData} />
         </div>
       </ErrorBoundary>

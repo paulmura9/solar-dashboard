@@ -5,12 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import LdrSensorCell from "./LdrSensorCell";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import { getBalanceBadgeVariant } from "@/lib/solar/status";
-import type { LightSensorData, BalanceStatus } from "@/lib/types";
+import { formatHorizontalDiff, formatVerticalDiff } from "@/lib/solar/lightState";
+import type { LightSensorData, BalanceStatus, LightState } from "@/lib/types";
 
 interface LightSensorsCardProps {
   data: LightSensorData | null;
   stale?: boolean;
   secondsAgo?: number | null;
+  lightState?: LightState;
+  /** Device is already in authoritative NIGHT mode — suppress the daytime "Dark" hint. */
+  deviceInNight?: boolean;
 }
 
 const BALANCE_LABELS: Record<BalanceStatus, string> = {
@@ -21,8 +25,15 @@ const BALANCE_LABELS: Record<BalanceStatus, string> = {
   LOW_LIGHT:  "Low Light",
 };
 
-const LightSensorsCard: FC<LightSensorsCardProps> = ({ data, stale = false, secondsAgo = null }) => {
+const LightSensorsCard: FC<LightSensorsCardProps> = ({
+  data,
+  stale = false,
+  secondsAgo = null,
+  lightState = "UNKNOWN",
+  deviceInNight = false,
+}) => {
   const status: BalanceStatus = data?.balanceStatus ?? "NIGHT";
+  const showDark = lightState === "DARK" && !deviceInNight;
 
   return (
     <Card className={stale ? "opacity-60" : undefined}>
@@ -47,17 +58,32 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({ data, stale = false, seco
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#e2e8f0]">
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-wider text-[#94a3b8] mb-0.5">H diff</p>
-            <p className="text-sm font-mono font-medium text-[#1e293b]">
-              {data?.horizontalDiff != null ? data.horizontalDiff.toFixed(0) : "—"}
+            <p className="text-sm font-mono font-medium text-[#1e293b] tabular-nums">
+              {formatHorizontalDiff(data?.horizontalDiff ?? null)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-wider text-[#94a3b8] mb-0.5">V diff</p>
-            <p className="text-sm font-mono font-medium text-[#1e293b]">
-              {data?.verticalDiff != null ? data.verticalDiff.toFixed(0) : "—"}
+            <p className="text-sm font-mono font-medium text-[#1e293b] tabular-nums">
+              {formatVerticalDiff(data?.verticalDiff ?? null)}
             </p>
           </div>
         </div>
+        {lightState === "NIGHT" && (
+          <div className="flex items-center justify-center pt-1 border-t border-[#e2e8f0]">
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-blue-200 bg-blue-50 text-blue-700">
+              Night
+            </span>
+          </div>
+        )}
+        {showDark && (
+          <div className="flex items-center justify-center gap-1.5 pt-1 border-t border-[#e2e8f0]">
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-200 bg-amber-50 text-amber-700">
+              Dark
+            </span>
+            <span className="text-[10px] text-[#94a3b8]">Low light (daytime)</span>
+          </div>
+        )}
         {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
