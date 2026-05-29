@@ -30,6 +30,9 @@ export const SOLAR_CONFIG = {
     // |H/V diff| below this is treated as balanced noise (matches firmware LDR_DEADBAND);
     // no direction arrow is shown within this band.
     diffNeutralBand: 350,
+    // A sensor reading at least this percent below the mean of the other three is flagged
+    // as a low outlier (one shaded/blocked corner while the rest see light).
+    outlierDropPct: 40,
   },
   battery: {
     goodPercent: 70,

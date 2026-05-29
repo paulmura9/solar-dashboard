@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import LdrSensorCell from "./LdrSensorCell";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import { getBalanceBadgeVariant } from "@/lib/solar/status";
-import { formatHorizontalDiff, formatVerticalDiff } from "@/lib/solar/lightState";
+import { formatHorizontalDiff, formatVerticalDiff, detectLdrOutliers } from "@/lib/solar/lightState";
 import type { LightSensorData, BalanceStatus, LightState } from "@/lib/types";
 
 interface LightSensorsCardProps {
@@ -13,8 +13,6 @@ interface LightSensorsCardProps {
   stale?: boolean;
   secondsAgo?: number | null;
   lightState?: LightState;
-  /** Device is already in authoritative NIGHT mode — suppress the daytime "Dark" hint. */
-  deviceInNight?: boolean;
 }
 
 const BALANCE_LABELS: Record<BalanceStatus, string> = {
@@ -30,10 +28,19 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
   stale = false,
   secondsAgo = null,
   lightState = "UNKNOWN",
-  deviceInNight = false,
 }) => {
   const status: BalanceStatus = data?.balanceStatus ?? "NIGHT";
-  const showDark = lightState === "DARK" && !deviceInNight;
+  // NIGHT is shown once, by the Tracking Status mode badge (device tracking_mode). Here we
+  // only surface the frontend-inferred DARK (daytime low-light) condition the device never reports.
+  const showDark = lightState === "DARK";
+
+  const ldrValues = [
+    data?.topLeft ?? null,
+    data?.topRight ?? null,
+    data?.bottomLeft ?? null,
+    data?.bottomRight ?? null,
+  ];
+  const [tlOutlier, trOutlier, blOutlier, brOutlier] = detectLdrOutliers(ldrValues);
 
   return (
     <Card className={stale ? "opacity-60" : undefined}>
@@ -50,10 +57,10 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
-          <LdrSensorCell label="Top Left"     value={data?.topLeft ?? null} />
-          <LdrSensorCell label="Top Right"    value={data?.topRight ?? null} />
-          <LdrSensorCell label="Bottom Left"  value={data?.bottomLeft ?? null} />
-          <LdrSensorCell label="Bottom Right" value={data?.bottomRight ?? null} />
+          <LdrSensorCell label="Top Left"     value={ldrValues[0]} isOutlier={tlOutlier} />
+          <LdrSensorCell label="Top Right"    value={ldrValues[1]} isOutlier={trOutlier} />
+          <LdrSensorCell label="Bottom Left"  value={ldrValues[2]} isOutlier={blOutlier} />
+          <LdrSensorCell label="Bottom Right" value={ldrValues[3]} isOutlier={brOutlier} />
         </div>
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#e2e8f0]">
           <div className="text-center">
@@ -69,13 +76,6 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
             </p>
           </div>
         </div>
-        {lightState === "NIGHT" && (
-          <div className="flex items-center justify-center pt-1 border-t border-[#e2e8f0]">
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-blue-200 bg-blue-50 text-blue-700">
-              Night
-            </span>
-          </div>
-        )}
         {showDark && (
           <div className="flex items-center justify-center gap-1.5 pt-1 border-t border-[#e2e8f0]">
             <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-200 bg-amber-50 text-amber-700">

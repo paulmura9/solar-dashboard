@@ -4,22 +4,33 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 interface LdrSensorCellProps {
   label: string;
   value: number | null;
+  /** Reads far darker than the other three sensors — render the percentage in red. */
+  isOutlier?: boolean;
 }
 
-const LdrSensorCell: FC<LdrSensorCellProps> = ({ label, value }) => {
+const LdrSensorCell: FC<LdrSensorCellProps> = ({ label, value, isOutlier = false }) => {
   const pct = value != null
     ? Math.round((value / SOLAR_CONFIG.ldr.maxValue) * 100)
     : 0;
 
   return (
     <div className="flex flex-col gap-1 p-2 rounded-lg bg-[#eef2f7] border border-[#dde4ee]">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
-          {label}
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+        {label}
+      </span>
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className={`text-lg font-bold font-mono leading-none tabular-nums ${
+            isOutlier ? "text-destructive" : "text-[#1e293b]"
+          }`}
+        >
+          {value != null ? `${pct}%` : "—"}
         </span>
-        <span className="text-xs font-mono text-[#1e293b]">
-          {value ?? "—"}
-        </span>
+        {value != null && (
+          <span className="text-[10px] font-mono text-[#94a3b8] tabular-nums">
+            {value}
+          </span>
+        )}
       </div>
       <div className="h-1.5 rounded-full bg-[#e2e8f0] overflow-hidden">
         {value != null && (
@@ -29,9 +40,6 @@ const LdrSensorCell: FC<LdrSensorCellProps> = ({ label, value }) => {
           />
         )}
       </div>
-      <span className="text-[10px] text-[#94a3b8] text-right">
-        {value != null ? `${pct}%` : "—"}
-      </span>
     </div>
   );
 };

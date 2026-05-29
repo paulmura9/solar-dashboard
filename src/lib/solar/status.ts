@@ -47,12 +47,12 @@ export function calculateLightSensorData(reading: SensorReading): LightSensorDat
   };
 }
 
-export function derivePanelMode(
-  reading: SensorReading,
-  lightSensors: LightSensorData
-): PanelMode {
+export function derivePanelMode(reading: SensorReading): PanelMode {
+  // NIGHT is authoritative from the device: the firmware parks the panel and reports
+  // tracking_mode = "NIGHT" using on-device NTP time + sunrise/sunset. We do not
+  // re-derive it from the LDRs here.
   if (reading.tracking_mode === "ERROR") return "ERROR";
-  if (lightSensors.balanceStatus === "NIGHT") return "NIGHT";
+  if (reading.tracking_mode === "NIGHT") return "NIGHT";
   if (reading.tracking_mode === "MANUAL") return "MANUAL";
   if (reading.tracking_mode === "IDLE") return "IDLE";
   return "TRACKING";
@@ -61,7 +61,7 @@ export function derivePanelMode(
 export function derivePanelStatusData(reading: SensorReading): PanelStatusData {
   const lightSensors = calculateLightSensorData(reading);
   return {
-    mode: derivePanelMode(reading, lightSensors),
+    mode: derivePanelMode(reading),
     horizontalAngle: reading.horizontal_angle,
     verticalAngle: reading.vertical_angle,
     isMoving: reading.is_moving,

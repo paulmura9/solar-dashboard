@@ -68,6 +68,7 @@ export default function OverviewPage() {
   // re-evaluated on the 1s tick from useStaleTelemetry; weather is null until fetched
   // client-side, so the initial SSR/hydration render is always UNKNOWN (no badge).
   const lightState = computeLightState(
+    latest?.tracking_mode ?? null,
     panelStatus?.lightSensors ?? null,
     weatherData,
     new Date(),
@@ -141,7 +142,6 @@ export default function OverviewPage() {
             stale={isStale}
             secondsAgo={secondsSinceLastReading}
             lightState={lightState}
-            deviceInNight={panelStatus?.mode === "NIGHT"}
           />
           <WeatherDataCard data={weatherData} />
         </div>
