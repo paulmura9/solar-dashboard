@@ -9,6 +9,7 @@ import {
 } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { DashboardWSClient } from "@/lib/ws/client";
+import { WS_CLIENT_PATH } from "@/lib/ws/constants";
 
 interface DashboardWSContextValue {
   client: DashboardWSClient | null;
@@ -40,8 +41,12 @@ export function DashboardWSProvider({
 
     const supabase = getSupabaseBrowserClient();
 
+    // NEXT_PUBLIC_WS_URL is host-only; append the client socket path, tolerating
+    // a trailing slash so the result is exactly wss://<host>/ws/client.
+    const url = `${wsUrl.replace(/\/+$/, "")}${WS_CLIENT_PATH}`;
+
     return new DashboardWSClient({
-      url: wsUrl,
+      url,
       getToken: async (): Promise<string | null> => {
         const { data } = await supabase.auth.getSession();
         return data.session?.access_token ?? null;
