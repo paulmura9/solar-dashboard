@@ -4,6 +4,8 @@ import { AlertTriangle } from "lucide-react";
 interface StaleDataBannerProps {
   isStale: boolean;
   secondsSinceLastReading: number | null;
+  esp32Online?: boolean | null;
+  gatewayOnline?: boolean | null;
 }
 
 function formatAge(seconds: number): string {
@@ -12,11 +14,23 @@ function formatAge(seconds: number): string {
   return `${seconds} seconds`;
 }
 
-const StaleDataBanner: FC<StaleDataBannerProps> = ({ isStale, secondsSinceLastReading }) => {
+const StaleDataBanner: FC<StaleDataBannerProps> = ({
+  isStale,
+  secondsSinceLastReading,
+  esp32Online = null,
+  gatewayOnline = null,
+}) => {
   if (!isStale) return null;
 
   const age =
     secondsSinceLastReading != null ? formatAge(secondsSinceLastReading) : "an unknown amount of time";
+
+  // The gateway (Pi) is what relays ESP32 telemetry. If we can see that the ESP32 is
+  // offline while the gateway is still online, name the ESP32 instead of blaming the gateway.
+  const cause =
+    esp32Online === false && gatewayOnline === true
+      ? "No telemetry from ESP32."
+      : "Gateway may be offline.";
 
   return (
     <div
@@ -25,7 +39,7 @@ const StaleDataBanner: FC<StaleDataBannerProps> = ({ isStale, secondsSinceLastRe
     >
       <AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
       <span>
-        Telemetry is stale, last reading received {age} ago. Gateway may be offline.
+        Telemetry is stale, last reading received {age} ago. {cause}
       </span>
     </div>
   );

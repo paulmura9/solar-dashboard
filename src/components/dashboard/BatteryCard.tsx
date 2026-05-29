@@ -8,10 +8,13 @@ import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage } from "@/lib/solar/energy";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
+import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading, BatteryStatus } from "@/lib/types";
 
 interface BatteryCardProps {
   reading: SensorReading | null;
+  stale?: boolean;
+  secondsAgo?: number | null;
 }
 
 function getBatteryColor(pct: number | null): string {
@@ -39,14 +42,14 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
   return <BatteryLow size={13} className={cls} />;
 }
 
-const BatteryCard: FC<BatteryCardProps> = ({ reading: r }) => {
+const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
   const pct = r?.battery_percent ?? null;
   const status = r?.battery_status ?? null;
   const color = getBatteryColor(pct);
   const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? STATUS_STYLES.UNKNOWN;
 
   return (
-    <Card>
+    <Card className={stale ? "opacity-60" : undefined}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
           <HeaderIcon status={status} pct={pct} />
@@ -87,6 +90,7 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r }) => {
             ) : "—"}
           />
         </div>
+        {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
   );

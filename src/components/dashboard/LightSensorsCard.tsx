@@ -3,11 +3,14 @@ import { Sun } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import LdrSensorCell from "./LdrSensorCell";
+import LastUpdatedStamp from "./LastUpdatedStamp";
 import { getBalanceBadgeVariant } from "@/lib/solar/status";
 import type { LightSensorData, BalanceStatus } from "@/lib/types";
 
 interface LightSensorsCardProps {
   data: LightSensorData | null;
+  stale?: boolean;
+  secondsAgo?: number | null;
 }
 
 const BALANCE_LABELS: Record<BalanceStatus, string> = {
@@ -18,11 +21,11 @@ const BALANCE_LABELS: Record<BalanceStatus, string> = {
   LOW_LIGHT:  "Low Light",
 };
 
-const LightSensorsCard: FC<LightSensorsCardProps> = ({ data }) => {
+const LightSensorsCard: FC<LightSensorsCardProps> = ({ data, stale = false, secondsAgo = null }) => {
   const status: BalanceStatus = data?.balanceStatus ?? "NIGHT";
 
   return (
-    <Card>
+    <Card className={stale ? "opacity-60" : undefined}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
@@ -55,6 +58,7 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({ data }) => {
             </p>
           </div>
         </div>
+        {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
   );

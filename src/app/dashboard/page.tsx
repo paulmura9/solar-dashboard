@@ -74,9 +74,22 @@ export default function OverviewPage() {
     .filter((d) => d.device_name !== "MQTT_BROKER");
   const isPlaceholderDevices = devices.length === 0;
 
+  // Only trust real device_status to attribute the staleness; placeholders mean "unknown".
+  const esp32Online = isPlaceholderDevices
+    ? null
+    : devices.find((d) => d.device_name === "ESP32")?.is_online ?? null;
+  const gatewayOnline = isPlaceholderDevices
+    ? null
+    : devices.find((d) => d.device_name === "RASPBERRY_PI")?.is_online ?? null;
+
   return (
     <div className="space-y-5">
-      <StaleDataBanner isStale={isStale} secondsSinceLastReading={secondsSinceLastReading} />
+      <StaleDataBanner
+        isStale={isStale}
+        secondsSinceLastReading={secondsSinceLastReading}
+        esp32Online={esp32Online}
+        gatewayOnline={gatewayOnline}
+      />
 
       <ErrorBoundary>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
@@ -109,10 +122,10 @@ export default function OverviewPage() {
 
       <ErrorBoundary>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-          <SolarProductionCard reading={latest} />
-          <BatteryCard reading={latest} />
-          <TrackingStatusCard data={panelStatus} vision={vision} />
-          <LightSensorsCard data={panelStatus?.lightSensors ?? null} />
+          <SolarProductionCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
+          <BatteryCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
+          <TrackingStatusCard data={panelStatus} vision={vision} stale={isStale} secondsAgo={secondsSinceLastReading} />
+          <LightSensorsCard data={panelStatus?.lightSensors ?? null} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <WeatherDataCard data={weatherData} />
         </div>
       </ErrorBoundary>

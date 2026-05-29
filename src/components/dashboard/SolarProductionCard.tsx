@@ -6,14 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage, formatCurrentMa, formatEnergy } from "@/lib/solar/energy";
 import MetricRow from "./MetricRow";
+import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading } from "@/lib/types";
 
 interface SolarProductionCardProps {
   reading: SensorReading | null;
+  stale?: boolean;
+  secondsAgo?: number | null;
 }
 
-const SolarProductionCard: FC<SolarProductionCardProps> = ({ reading: r }) => (
-  <Card>
+const SolarProductionCard: FC<SolarProductionCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => (
+  <Card className={stale ? "opacity-60" : undefined}>
     <CardHeader className="pb-2">
       <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
         <Sun size={13} className="text-amber-500" />
@@ -38,6 +41,7 @@ const SolarProductionCard: FC<SolarProductionCardProps> = ({ reading: r }) => (
         <MetricRow label="Current"      value={formatCurrentMa(r?.solar_current ?? null)} />
         <MetricRow label="Energy today" value={formatEnergy(r?.solar_energy_today_wh ?? null)} />
       </div>
+      {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
     </CardContent>
   </Card>
 );

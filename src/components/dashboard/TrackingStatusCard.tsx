@@ -3,11 +3,14 @@ import { Navigation, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatAngle } from "@/lib/solar/energy";
 import { dirtColor } from "@/lib/solar/status";
+import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { PanelMode, PanelStatusData, VisionResult } from "@/lib/types";
 
 interface TrackingStatusCardProps {
   data: PanelStatusData | null;
   vision: VisionResult | null;
+  stale?: boolean;
+  secondsAgo?: number | null;
 }
 
 interface ModeStyle { color: string; bg: string; border: string }
@@ -20,12 +23,14 @@ const MODE_STYLES: Record<PanelMode, ModeStyle> = {
   NIGHT:    { color: "#1e3a5f", bg: "#eff6ff", border: "#bfdbfe" },
 };
 
-const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
+const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision, stale = false, secondsAgo = null }) => {
   const mode: PanelMode = data?.mode ?? "IDLE";
-  const s: ModeStyle = MODE_STYLES[mode] ?? MODE_STYLES.IDLE;
+  // While stale the last reading no longer reflects current activity, so drop the
+  // active (green/amber) styling back to the neutral IDLE palette.
+  const s: ModeStyle = stale ? MODE_STYLES.IDLE : (MODE_STYLES[mode] ?? MODE_STYLES.IDLE);
 
   return (
-    <Card>
+    <Card className={stale ? "opacity-60" : undefined}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
           <Navigation size={13} className="text-blue-500" />
@@ -60,7 +65,11 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
 
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#64748b]">Panel</span>
-          {data?.isMoving ? (
+          {stale ? (
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-[#e2e8f0] bg-[#f8fafc] text-[#475569]">
+              Last known: {data?.isMoving ? "Moving" : "Stable"}
+            </span>
+          ) : data?.isMoving ? (
             <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-300 bg-amber-50 text-amber-700">
               <Activity size={9} />
               Moving
@@ -81,6 +90,7 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision }) => {
             {vision?.dirt_level_percent != null ? `${vision.dirt_level_percent.toFixed(1)}%` : "—"}
           </span>
         </div>
+        {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
   );
