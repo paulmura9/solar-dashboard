@@ -161,10 +161,12 @@ type CaptureRequestResult =
   | { success: false; error: string };
 
 export async function requestCameraCapture(token: string): Promise<CaptureRequestResult> {
+  // A manual capture is just a device command; the backend has no dedicated
+  // /api/camera/capture route. Reuse the generic command endpoint.
   const res = await apiFetch<ApiResponse<RawJson>>(
-    "/api/camera/capture",
+    "/api/commands",
     token,
-    { method: "POST" }
+    { method: "POST", body: JSON.stringify({ command_type: "CAPTURE_IMAGE", payload: {} }) }
   );
   if (!res.ok) return { success: false, error: res.error };
 
