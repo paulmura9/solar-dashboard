@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CheckCircle, AlertTriangle, Camera, LoaderCircle, WifiOff, AlertCircle } from "lucide-react";
+import { CheckCircle, CheckCircle2, AlertTriangle, Camera, LoaderCircle, WifiOff, AlertCircle, Maximize2, X } from "lucide-react";
+import { Dialog } from "radix-ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,46 @@ function ImageWithSkeleton({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+function ImageLightbox({
+  src,
+  open,
+  onOpenChange,
+}: {
+  src: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80" />
+        {/* Full-viewport flex container bounds the image to the screen on first
+            paint (vw/vh-relative), so it fits without needing a resize/reflow. */}
+        <Dialog.Content
+          aria-label="Captured image, full screen"
+          aria-describedby={undefined}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
+          onClick={(e) => { if (e.target === e.currentTarget) onOpenChange(false); }}
+        >
+          <Dialog.Title className="sr-only">Captured panel image (full screen)</Dialog.Title>
+          {/* eslint-disable-next-line @next/next/no-img-element -- signed Supabase Storage URL, next/image would require remotePatterns config */}
+          <img
+            src={src}
+            alt="Panel surface capture, full screen"
+            className="max-h-[90vh] max-w-[90vw] h-auto w-auto object-contain rounded-lg shadow-2xl"
+          />
+          <Dialog.Close
+            aria-label="Close full screen"
+            className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white outline-none transition-colors hover:bg-black/70 focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <X size={18} />
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 export default function DirtDetectionPage() {
   const { data: latest, isInitialLoad: latestInitial } = useLatestVision();
   const { data: rawHistory, isInitialLoad: historyInitial } = useVisionHistory();
@@ -75,7 +116,7 @@ export default function DirtDetectionPage() {
   const token = useApiToken();
   const { data: latestCapture } = useLatestCapture();
   const { data: devices, isInitialLoad: devicesInitial } = useDevices();
-  const { phase, error: captureError, capture } = useCameraCapture(token);
+  const { phase, error: captureError, capturedRow, capture } = useCameraCapture(token);
 
   const piOnline = devices.some((d) => d.device_name === "RASPBERRY_PI" && d.is_online);
   const capturing = phase === "capturing";
@@ -83,15 +124,22 @@ export default function DirtDetectionPage() {
 
   const [latestCaptureUrl, setLatestCaptureUrl] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [showCaptured, setShowCaptured] = useState(false);
+  const [flashImage, setFlashImage] = useState(false);
+
+  // A just-completed capture (cache-bypassing, command-matched) supersedes the
+  // SWR-cached latest row, so we never render the previous (stale) capture.
+  const displayCapture = capturedRow ?? latestCapture;
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const url = latestCapture?.image_path ? await getSignedImageUrl(latestCapture.image_path) : null;
+      const url = displayCapture?.image_path ? await getSignedImageUrl(displayCapture.image_path) : null;
       if (!cancelled) setLatestCaptureUrl(url);
     })();
     return () => { cancelled = true; };
-  }, [latestCapture?.image_path]);
+  }, [displayCapture?.image_path]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +149,27 @@ export default function DirtDetectionPage() {
     })();
     return () => { cancelled = true; };
   }, [latest?.processed_image_path]);
+
+  // Transient success confirmation: capturedRow changes only when a capture
+  // resolves successfully (guarded per-command in the hook), so a stale/late
+  // event can't re-trigger it. setState runs only in timer callbacks (never
+  // synchronously in the effect body); all timers are cleared on unmount and
+  // before each new success, so they never stack.
+  useEffect(() => {
+    if (!capturedRow) return;
+    const reveal = setTimeout(() => { setShowCaptured(true); setFlashImage(true); }, 0);
+    const hideToast = setTimeout(() => setShowCaptured(false), 2500);
+    const hideFlash = setTimeout(() => setFlashImage(false), 1000);
+    return () => {
+      clearTimeout(reveal);
+      clearTimeout(hideToast);
+      clearTimeout(hideFlash);
+    };
+  }, [capturedRow]);
+
+  // Suppress the cue while a new capture is in progress (derived, not stateful).
+  const captureConfirmed = showCaptured && phase !== "capturing";
+  const flashActive = flashImage && phase !== "capturing";
 
   if (latestInitial && historyInitial) return <DirtDetectionSkeleton />;
 
@@ -126,15 +195,21 @@ export default function DirtDetectionPage() {
                 {capturing ? <LoaderCircle className="animate-spin" /> : <Camera />}
                 {capturing ? "Capturing..." : "Capture Image"}
               </Button>
-              {!devicesInitial && !piOnline ? (
-                <span className="text-[11px] text-[#94a3b8] flex items-center gap-1">
-                  <WifiOff size={11} /> Gateway offline
-                </span>
-              ) : captureError ? (
-                <span className="text-[11px] text-red-500 flex items-center gap-1 max-w-[220px] text-right">
-                  <AlertCircle size={11} className="shrink-0" /> {captureError}
-                </span>
-              ) : null}
+              <div aria-live="polite" aria-atomic="true">
+                {captureConfirmed ? (
+                  <span className="text-[11px] text-green-600 flex items-center gap-1">
+                    <CheckCircle2 size={11} className="shrink-0" /> Captured
+                  </span>
+                ) : !devicesInitial && !piOnline ? (
+                  <span className="text-[11px] text-[#94a3b8] flex items-center gap-1">
+                    <WifiOff size={11} /> Gateway offline
+                  </span>
+                ) : captureError ? (
+                  <span className="text-[11px] text-red-500 flex items-center gap-1 max-w-[220px] text-right">
+                    <AlertCircle size={11} className="shrink-0" /> {captureError}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -227,12 +302,26 @@ export default function DirtDetectionPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border border-[#e2e8f0] ring-0">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
               <CardTitle className="text-sm font-semibold text-[#1e293b]">Last Captured Image</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="View captured image full screen"
+                className="text-[#64748b] hover:text-[#3b82f6]"
+                disabled={!latestCaptureUrl}
+                onClick={() => setLightboxOpen(true)}
+              >
+                <Maximize2 />
+              </Button>
             </CardHeader>
             <CardContent>
               {latestCaptureUrl ? (
-                <ImageWithSkeleton key={latestCaptureUrl} src={latestCaptureUrl} alt="Panel surface capture" />
+                <div
+                  className={`rounded-lg transition-all duration-500 ${flashActive ? "ring-2 ring-green-500 ring-offset-2" : "ring-0 ring-offset-0"}`}
+                >
+                  <ImageWithSkeleton key={latestCaptureUrl} src={latestCaptureUrl} alt="Panel surface capture" />
+                </div>
               ) : (
                 <div className="w-full h-48 rounded-lg bg-slate-100 flex flex-col items-center justify-center gap-2">
                   <span className="text-slate-400 text-sm">No image available</span>
@@ -241,6 +330,9 @@ export default function DirtDetectionPage() {
               )}
             </CardContent>
           </Card>
+          {latestCaptureUrl && (
+            <ImageLightbox src={latestCaptureUrl} open={lightboxOpen} onOpenChange={setLightboxOpen} />
+          )}
 
           <Card className="border border-[#e2e8f0] ring-0">
             <CardHeader>

@@ -4,7 +4,7 @@ import type { FC } from "react";
 import { Sun } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NumberTicker } from "@/components/magic/NumberTicker";
-import { formatVoltage, formatCurrentMa, formatEnergy } from "@/lib/solar/energy";
+import { formatVoltage, formatCurrentMa, formatEnergy, siToMilli } from "@/lib/solar/energy";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading } from "@/lib/types";
@@ -28,7 +28,7 @@ const SolarProductionCard: FC<SolarProductionCardProps> = ({ reading: r, stale =
         {r?.solar_power != null ? (
           <>
             <span className="text-3xl font-bold font-mono text-[#1e293b] leading-none">
-              <NumberTicker value={r.solar_power} decimalPlaces={1} />
+              <NumberTicker value={siToMilli(r.solar_power)} decimalPlaces={1} />
             </span>
             <span className="text-sm text-[#64748b] pb-0.5">mW</span>
           </>

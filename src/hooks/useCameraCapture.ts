@@ -22,6 +22,12 @@ export type CapturePhase = "idle" | "capturing" | "cooldown" | "error";
 export interface CameraCaptureResult {
   phase: CapturePhase;
   error: string | null;
+  /**
+   * The fresh, cache-bypassing capture row for the just-issued command, set the
+   * moment completion is confirmed. The page should prefer this over the SWR
+   * `latestCapture` to avoid rendering the previous (cached) row.
+   */
+  capturedRow: CameraCapture | null;
   capture: () => Promise<void>;
 }
 
@@ -40,6 +46,7 @@ export function useCameraCapture(token: string): CameraCaptureResult {
 
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [capturedRow, setCapturedRow] = useState<CameraCapture | null>(null);
 
   const wsUnsubRef = useRef<(() => void) | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -72,9 +79,8 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     };
   }, [stopListening]);
 
-  // Refresh the SWR-backed latest capture so the page's "Last Captured Image"
-  // (useLatestCapture) updates. Detection uses the cache-free getLatestCapture;
-  // this is purely for display.
+  // Keep the SWR latest-capture cache in sync too, so a remount/refresh shows the
+  // new row. Display itself is driven by `capturedRow` (cache-bypassing).
   const refreshDisplay = useCallback(() => {
     void mutate(apiKeys.latestCapture);
   }, [mutate]);
@@ -89,14 +95,6 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     }, CAPTURE_COOLDOWN_MS);
   }, []);
 
-  const finishSuccess = useCallback(() => {
-    if (resolvedRef.current) return;
-    resolvedRef.current = true;
-    stopListening();
-    refreshDisplay();
-    enterCooldown();
-  }, [stopListening, refreshDisplay, enterCooldown]);
-
   const finishFailure = useCallback((message: string) => {
     if (resolvedRef.current) return;
     resolvedRef.current = true;
@@ -109,6 +107,17 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     setError(message);
     setPhase("error");
   }, [stopListening]);
+
+  // Resolve success with the exact fresh row that completion produced, so the
+  // displayed image is the just-taken capture — never the stale cached one.
+  const resolveWithRow = useCallback((cap: CameraCapture) => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    stopListening();
+    if (mountedRef.current) setCapturedRow(cap);
+    refreshDisplay();
+    enterCooldown();
+  }, [stopListening, refreshDisplay, enterCooldown]);
 
   const capture = useCallback(async () => {
     if (!token) {
@@ -129,15 +138,18 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     }
     const commandId = result.commandId;
 
-    // (1) Live path — resolve as soon as Express pushes this command's status
-    // over the shared /ws/client connection. No second connection is opened.
+    // (1) Live path — when Express pushes this command's status over the shared
+    // /ws/client connection. On ACK, fetch the fresh row for this command so we
+    // display the just-taken image; if the row lags, the poll below catches it.
     if (client) {
       wsUnsubRef.current = client.on<CommandStatusUpdate>("command_status_update", (update) => {
         if (update.id !== commandId) return;
         if (update.status === "FAILED") {
           finishFailure(update.error_message ?? "Capture failed");
         } else if (update.status === "ACKNOWLEDGED") {
-          finishSuccess();
+          void getLatestCapture(token).then((cap) => {
+            if (cap && cap.command_id === commandId) resolveWithRow(cap);
+          });
         }
       });
     }
@@ -154,23 +166,23 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     const baseline = await getLatestCapture(token);
     if (resolvedRef.current) return; // WS may have resolved during the fetch
     if (baseline && baseline.command_id === commandId) {
-      finishSuccess();
+      resolveWithRow(baseline);
       return;
     }
     const baselineIdentity = captureIdentity(baseline);
 
-    // (2) Reconciliation path — cache-free poll. Resolve when the row for this
-    // command_id appears, or when a new capture row supersedes the baseline.
+    // (2) Reconciliation path — cache-free poll. Resolve with the row for this
+    // command_id, or with a new capture row that supersedes the baseline.
     pollRef.current = setInterval(() => {
       void getLatestCapture(token).then((cap) => {
         if (!cap) return;
         const matchesCommand = cap.command_id === commandId;
         const identity = captureIdentity(cap);
         const isNewRow = identity !== null && identity !== baselineIdentity;
-        if (matchesCommand || isNewRow) finishSuccess();
+        if (matchesCommand || isNewRow) resolveWithRow(cap);
       });
     }, RECONCILE_INTERVAL_MS);
-  }, [token, phase, client, stopListening, finishSuccess, finishFailure]);
+  }, [token, phase, client, stopListening, finishFailure, resolveWithRow]);
 
-  return { phase, error, capture };
+  return { phase, error, capturedRow, capture };
 }
