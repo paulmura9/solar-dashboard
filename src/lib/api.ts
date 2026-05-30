@@ -2,6 +2,7 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { getWeatherStatus, computeSolarNoon } from "@/lib/solar/weather";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { apiFetch } from "./backendClient";
+import { apiKeys } from "@/types/api";
 import type {
   SensorReading,
   VisionResult,
@@ -179,6 +180,19 @@ export async function requestCameraCapture(token: string): Promise<CaptureReques
     return { success: false, error: "Invalid response" };
   }
   return { success: true, commandId: id };
+}
+
+// Direct, cache-free read of the latest capture. Used by the capture flow's
+// reconciliation poll, where SWR's deduping interval could otherwise return a
+// stale envelope and the freshly-written row would never be observed in time.
+export async function getLatestCapture(token: string): Promise<CameraCapture | null> {
+  const res = await apiFetch<ApiResponse<RawJson>>(
+    apiKeys.latestCapture,
+    token,
+    { cache: "no-store" }
+  );
+  if (!res.ok) return null;
+  return res.data?.data ? mapCapture(res.data.data) : null;
 }
 
 export async function getSunToday(): Promise<WeatherData | null> {

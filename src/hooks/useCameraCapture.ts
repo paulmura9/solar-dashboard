@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSWRConfig } from "swr";
-import { requestCameraCapture, mapCapture } from "@/lib/api";
+import { requestCameraCapture, getLatestCapture } from "@/lib/api";
 import { useDashboardWS } from "@/components/providers/DashboardWSProvider";
-import { apiKeys, type CaptureEnvelope } from "@/types/api";
+import { apiKeys, type CameraCapture } from "@/types/api";
 import type { CommandStatusUpdate } from "@/lib/ws/types";
 
 // Mirrors the post-command cooldown used by usePanelCommands (RESET_POSITION):
@@ -14,7 +14,7 @@ const CAPTURE_COOLDOWN_MS = 2_000;
 // never hangs in the "Capturing..." state. Matches the backend POST timeout.
 const CAPTURE_TIMEOUT_MS = 15_000;
 // Reconciliation cadence: re-fetch the latest capture while awaiting the result,
-// so a WS event missed in the POST→listener window is still picked up.
+// so completion is detected even if the WS ack never arrives.
 const RECONCILE_INTERVAL_MS = 2_000;
 
 export type CapturePhase = "idle" | "capturing" | "cooldown" | "error";
@@ -23,6 +23,15 @@ export interface CameraCaptureResult {
   phase: CapturePhase;
   error: string | null;
   capture: () => Promise<void>;
+}
+
+// Stable identity for a capture row, independent of the id column's type.
+// Used to detect "a new capture row appeared" when the API doesn't echo command_id.
+function captureIdentity(cap: CameraCapture | null): string | null {
+  if (!cap) return null;
+  if (cap.command_id) return cap.command_id;
+  if (cap.id != null) return String(cap.id);
+  return cap.image_path ?? null;
 }
 
 export function useCameraCapture(token: string): CameraCaptureResult {
@@ -63,11 +72,11 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     };
   }, [stopListening]);
 
-  // Re-fetch the latest capture through the existing SWR cache key, so the page's
-  // useLatestCapture (and thus the displayed image) refreshes as a side effect.
-  const refetchLatestCapture = useCallback(async () => {
-    const env = (await mutate(apiKeys.latestCapture)) as CaptureEnvelope | undefined;
-    return env?.data ? mapCapture(env.data) : null;
+  // Refresh the SWR-backed latest capture so the page's "Last Captured Image"
+  // (useLatestCapture) updates. Detection uses the cache-free getLatestCapture;
+  // this is purely for display.
+  const refreshDisplay = useCallback(() => {
+    void mutate(apiKeys.latestCapture);
   }, [mutate]);
 
   const enterCooldown = useCallback(() => {
@@ -84,11 +93,9 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     if (resolvedRef.current) return;
     resolvedRef.current = true;
     stopListening();
-    // Pull the captured image into the cache even if the WS event won the race
-    // before the row was queryable on a prior poll tick.
-    void refetchLatestCapture();
+    refreshDisplay();
     enterCooldown();
-  }, [stopListening, refetchLatestCapture, enterCooldown]);
+  }, [stopListening, refreshDisplay, enterCooldown]);
 
   const finishFailure = useCallback((message: string) => {
     if (resolvedRef.current) return;
@@ -135,20 +142,35 @@ export function useCameraCapture(token: string): CameraCaptureResult {
       });
     }
 
-    // (2) Reconciliation path — poll the latest capture and resolve when the row
-    // for this command appears. Covers the missed-WS-event and no-WS-client cases.
-    pollRef.current = setInterval(() => {
-      void refetchLatestCapture().then((cap) => {
-        if (cap && cap.command_id === commandId) finishSuccess();
-      });
-    }, RECONCILE_INTERVAL_MS);
-
-    // (3) Only surface an error if neither path confirmed within the window.
+    // (3) Arm the timeout immediately so a slow baseline fetch can't leave the
+    // UI hanging. Only fires if neither path confirms in the window.
     timeoutRef.current = setTimeout(
       () => finishFailure("Capture timed out — no response from gateway"),
       CAPTURE_TIMEOUT_MS
     );
-  }, [token, phase, client, stopListening, refetchLatestCapture, finishSuccess, finishFailure]);
+
+    // Baseline: the latest capture identity BEFORE this command completes, so the
+    // poll can detect a brand-new row even when the API omits command_id.
+    const baseline = await getLatestCapture(token);
+    if (resolvedRef.current) return; // WS may have resolved during the fetch
+    if (baseline && baseline.command_id === commandId) {
+      finishSuccess();
+      return;
+    }
+    const baselineIdentity = captureIdentity(baseline);
+
+    // (2) Reconciliation path — cache-free poll. Resolve when the row for this
+    // command_id appears, or when a new capture row supersedes the baseline.
+    pollRef.current = setInterval(() => {
+      void getLatestCapture(token).then((cap) => {
+        if (!cap) return;
+        const matchesCommand = cap.command_id === commandId;
+        const identity = captureIdentity(cap);
+        const isNewRow = identity !== null && identity !== baselineIdentity;
+        if (matchesCommand || isNewRow) finishSuccess();
+      });
+    }, RECONCILE_INTERVAL_MS);
+  }, [token, phase, client, stopListening, finishSuccess, finishFailure]);
 
   return { phase, error, capture };
 }
