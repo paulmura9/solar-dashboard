@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BarChart2,
-  Eye,
   Sliders,
   Video,
   Settings,
@@ -15,9 +14,8 @@ import { SolarLogo } from "@/components/SolarLogo";
 const NAV_LINKS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/dirt-detection", label: "Dirt Detection", icon: Eye },
+  { href: "/dirt-detection", label: "Dirt Detection", icon: Video },
   { href: "/control", label: "Control", icon: Sliders },
-  { href: "/live", label: "Live Camera", icon: Video },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

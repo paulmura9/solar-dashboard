@@ -20,9 +20,15 @@ export function formatCurrentMa(amperes: number | null): string {
   return `${siToMilli(amperes).toFixed(1)} mA`;
 }
 
-export function formatEnergy(wh: number | null): string {
-  if (wh == null) return "—";
-  return `${wh.toFixed(1)} Wh`;
+// Daily energy spans several orders of magnitude on this small panel, so a fixed
+// "X.X Wh" hides sub-0.05 Wh values as a misleading "0.0". Switch to milliwatt-hours
+// below 1 Wh so tiny-but-real production stays visible. The stored value is always Wh.
+export function formatEnergy(wh: number | null | undefined): string {
+  if (wh == null || wh === 0) return "0 mWh";
+  if (wh >= 1) return `${wh.toFixed(2)} Wh`;
+  // Below 1 Wh: present as mWh, up to 1 decimal, dropping a trailing ".0".
+  const mwh = parseFloat((wh * MILLI_PER_UNIT).toFixed(1));
+  return `${mwh} mWh`;
 }
 
 export function formatAngle(deg: number | null): string {
