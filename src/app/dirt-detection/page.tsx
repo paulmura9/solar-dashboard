@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import { CheckCircle, CheckCircle2, AlertTriangle, Camera, LoaderCircle, WifiOff, AlertCircle, Maximize2, X } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,23 @@ import { formatPower } from "@/lib/solar/energy";
 import { DirtDetectionSkeleton } from "@/components/skeletons/DirtDetectionSkeleton";
 import { STATUS_BADGE_OK, STATUS_BADGE_ERROR } from "@/lib/ui/statusBadgeStyle";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Amber sibling of STATUS_BADGE_OK/ERROR for the intermediate severity; kept
+// local since "slightly_dirty" is the only consumer of a warning-colored badge.
+const STATUS_BADGE_WARNING: CSSProperties = {
+  background: "#fef3c7",
+  color: "#92400e",
+  borderColor: "#fde68a",
+};
+
+const PREDICTED_CLASS_BADGE: Record<
+  "clean" | "slightly_dirty" | "dirty",
+  { label: string; style: CSSProperties }
+> = {
+  clean:          { label: "Clean",          style: STATUS_BADGE_OK },
+  slightly_dirty: { label: "Slightly Dirty", style: STATUS_BADGE_WARNING },
+  dirty:          { label: "Dirty",          style: STATUS_BADGE_ERROR },
+};
 
 function dirtIcon(pct: number, cleaning: boolean) {
   if (pct > 35 || cleaning) return <AlertTriangle size={18} className="text-red-500" />;
@@ -230,6 +247,15 @@ export default function DirtDetectionPage() {
                     </span>
                     <span className="text-lg text-[#94a3b8]">%</span>
                     <span className="text-sm text-[#64748b] ml-1">dirt level</span>
+                    {latest.predicted_class && (
+                      <Badge
+                        variant="outline"
+                        className="ml-2 self-center"
+                        style={PREDICTED_CLASS_BADGE[latest.predicted_class].style}
+                      >
+                        {PREDICTED_CLASS_BADGE[latest.predicted_class].label}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-3 h-3 bg-[#f1f5f9] rounded-full overflow-hidden">
                     <div

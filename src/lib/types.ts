@@ -38,6 +38,7 @@ export interface VisionResult {
   dirt_level_percent: number;
   cleanliness_percent: number;
   cleaning_required: boolean;
+  predicted_class: "clean" | "slightly_dirty" | "dirty" | null;
   confidence: number | null;
   image_path: string | null;
   processed_image_path: string | null;

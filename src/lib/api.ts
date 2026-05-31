@@ -63,6 +63,7 @@ export function mapVision(d: unknown): VisionResult {
     dirt_level_percent:   pick<number>(o, "dirtLevelPercent", "dirt_level_percent"),
     cleanliness_percent:  pick<number>(o, "cleanlinessPercent", "cleanliness_percent"),
     cleaning_required:    pick<boolean>(o, "cleaningRequired", "cleaning_required"),
+    predicted_class:      pick<VisionResult["predicted_class"]>(o, "predictedClass", "predicted_class") ?? null,
     confidence:           o.confidence as number | null,
     image_path:           pick<string | null>(o, "imagePath", "image_path"),
     processed_image_path: pick<string | null>(o, "processedImagePath", "processed_image_path"),
