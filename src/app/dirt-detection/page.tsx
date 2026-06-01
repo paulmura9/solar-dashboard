@@ -210,11 +210,29 @@ export default function DirtDetectionPage() {
   const qualityFailed = latest != null && latest.quality_ok === false;
   const qualityReasonText = qualityReasonLabel(latest?.quality_reason);
 
+  // A dirty surface only counts as actionable when the analysis itself is
+  // trustworthy — an obstructed camera already shows its own banner.
+  const needsCleaning =
+    latest != null &&
+    !qualityFailed &&
+    (latest.predicted_class === "dirty" || latest.cleaning_required === true);
+
   const energyImpact = latest && !qualityFailed ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 
   return (
     <ErrorBoundary>
       <div className="space-y-5">
+        {needsCleaning && (
+          <div className="flex items-start gap-3 rounded-lg border border-[#fca5a5] bg-[#fef2f2] p-4">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-[#ef4444]" />
+            <div className="space-y-0.5">
+              <p className="text-base font-semibold text-[#991b1b]">Panel needs cleaning</p>
+              <p className="text-xs text-[#b91c1c]">
+                Estimated dirt level: {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"} %
+              </p>
+            </div>
+          </div>
+        )}
         <Card className="border border-[#e2e8f0] ring-0">
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold text-[#1e293b]">
