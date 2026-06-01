@@ -42,6 +42,8 @@ export interface VisionResult {
   confidence: number | null;
   image_path: string | null;
   processed_image_path: string | null;
+  quality_ok: boolean;
+  quality_reason: string | null;
   created_at: string;
 }
 

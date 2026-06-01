@@ -67,6 +67,8 @@ export function mapVision(d: unknown): VisionResult {
     confidence:           o.confidence as number | null,
     image_path:           pick<string | null>(o, "imagePath", "image_path"),
     processed_image_path: pick<string | null>(o, "processedImagePath", "processed_image_path"),
+    quality_ok:           pick<boolean | undefined>(o, "qualityOk", "quality_ok") ?? true,
+    quality_reason:       pick<string | null>(o, "qualityReason", "quality_reason") ?? null,
     created_at:           pick<string>(o, "createdAt", "created_at"),
   };
 }

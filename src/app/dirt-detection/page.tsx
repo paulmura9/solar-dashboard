@@ -49,6 +49,16 @@ function fmt(value: number | null | undefined, decimals = 1): string {
   return value.toFixed(decimals);
 }
 
+const QUALITY_REASON_LABEL: Record<string, string> = {
+  too_dark: "Image too dark",
+  low_detail: "Camera may be covered",
+};
+
+function qualityReasonLabel(reason: string | null | undefined): string | null {
+  if (!reason) return null;
+  return QUALITY_REASON_LABEL[reason] ?? null;
+}
+
 function computeEnergyImpact(dirtPct: number): {
   powerLostW: number;
   energyLostTodayWh: number;
@@ -126,7 +136,11 @@ export default function DirtDetectionPage() {
   const { data: latest, isInitialLoad: latestInitial } = useLatestVision();
   const { data: rawHistory, isInitialLoad: historyInitial } = useVisionHistory();
   const history = useMemo(
-    () => (rawHistory.length > 0 ? [...rawHistory].reverse() : rawHistory),
+    () =>
+      [...rawHistory].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      ),
     [rawHistory]
   );
 
@@ -190,7 +204,12 @@ export default function DirtDetectionPage() {
 
   if (latestInitial && historyInitial) return <DirtDetectionSkeleton />;
 
-  const energyImpact = latest ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
+  // When the camera reports a quality failure the model output is unreliable, so
+  // the displayed percentages are not a real surface measurement.
+  const qualityFailed = latest != null && latest.quality_ok === false;
+  const qualityReasonText = qualityReasonLabel(latest?.quality_reason);
+
+  const energyImpact = latest && !qualityFailed ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 
   return (
     <ErrorBoundary>
@@ -237,13 +256,24 @@ export default function DirtDetectionPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div>
+                {qualityFailed && (
+                  <div className="flex items-start gap-3 rounded-lg border border-[#fdba74] bg-[#fff7ed] p-3.5">
+                    <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[#f97316]" />
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-[#9a3412]">Camera obstructed — analysis paused</p>
+                      {qualityReasonText && (
+                        <p className="text-xs text-[#c2410c]">{qualityReasonText}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className={qualityFailed ? "opacity-40" : undefined}>
                   <div className="flex items-baseline gap-2">
                     <span
                       className="text-5xl font-bold tabular-nums"
-                      style={{ color: latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8" }}
+                      style={{ color: !qualityFailed && latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8" }}
                     >
-                      {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
+                      {!qualityFailed && latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
                     </span>
                     <span className="text-lg text-[#94a3b8]">%</span>
                     <span className="text-sm text-[#64748b] ml-1">dirt level</span>
@@ -261,22 +291,22 @@ export default function DirtDetectionPage() {
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
-                        width: `${latest.dirt_level_percent ?? 0}%`,
-                        background: latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8",
+                        width: qualityFailed ? "0%" : `${latest.dirt_level_percent ?? 0}%`,
+                        background: !qualityFailed && latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8",
                       }}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs">
+                <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs ${qualityFailed ? "opacity-40" : ""}`}>
                   <div>
                     <p className="text-[#94a3b8] mb-0.5">Cleanliness</p>
-                    <p className="font-semibold text-[#1e293b]">{fmt(latest.cleanliness_percent)} %</p>
+                    <p className="font-semibold text-[#1e293b]">{qualityFailed ? "—" : `${fmt(latest.cleanliness_percent)} %`}</p>
                   </div>
                   <div>
                     <p className="text-[#94a3b8] mb-0.5">Confidence</p>
                     <p className="font-semibold text-[#1e293b]">
-                      {latest.confidence != null ? (latest.confidence * 100).toFixed(1) : "—"} %
+                      {qualityFailed ? "—" : `${latest.confidence != null ? (latest.confidence * 100).toFixed(1) : "—"} %`}
                     </p>
                   </div>
                   <div>
