@@ -411,10 +411,7 @@ export default function DirtDetectionPage() {
 
           <Card className="border border-[#e2e8f0] ring-0">
             <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div className="space-y-0.5">
-                <CardTitle className="text-sm font-semibold text-[#1e293b]">Surface Analysis</CardTitle>
-                <p className="text-xs text-[#94a3b8]">(image processing, independent of the ML model)</p>
-              </div>
+              <CardTitle className="text-sm font-semibold text-[#1e293b]">Surface Analysis</CardTitle>
               <Button
                 variant="ghost"
                 size="icon-sm"
