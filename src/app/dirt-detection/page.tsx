@@ -156,6 +156,7 @@ export default function DirtDetectionPage() {
   const [latestCaptureUrl, setLatestCaptureUrl] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [surfaceLightboxOpen, setSurfaceLightboxOpen] = useState(false);
   const [showCaptured, setShowCaptured] = useState(false);
   const [flashImage, setFlashImage] = useState(false);
 
@@ -391,20 +392,36 @@ export default function DirtDetectionPage() {
           )}
 
           <Card className="border border-[#e2e8f0] ring-0">
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold text-[#1e293b]">Processed Mask</CardTitle>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <CardTitle className="text-sm font-semibold text-[#1e293b]">Surface Analysis</CardTitle>
+                <p className="text-xs text-[#94a3b8]">(image processing, independent of the ML model)</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="View surface analysis full screen"
+                className="text-[#64748b] hover:text-[#3b82f6]"
+                disabled={!processedImageUrl}
+                onClick={() => setSurfaceLightboxOpen(true)}
+              >
+                <Maximize2 />
+              </Button>
             </CardHeader>
             <CardContent>
               {processedImageUrl ? (
-                <ImageWithSkeleton key={processedImageUrl} src={processedImageUrl} alt="Dirt detection mask" />
+                <ImageWithSkeleton key={processedImageUrl} src={processedImageUrl} alt="Surface analysis" />
               ) : (
                 <div className="w-full h-48 rounded-lg bg-slate-100 flex flex-col items-center justify-center gap-2">
-                  <span className="text-slate-400 text-sm">No processed image</span>
+                  <span className="text-slate-400 text-sm">No surface analysis yet</span>
                   <span className="text-slate-300 text-xs">Analysis has not completed yet</span>
                 </div>
               )}
             </CardContent>
           </Card>
+          {processedImageUrl && (
+            <ImageLightbox src={processedImageUrl} open={surfaceLightboxOpen} onOpenChange={setSurfaceLightboxOpen} />
+          )}
         </div>
 
         <Card className="border border-[#e2e8f0] ring-0">
