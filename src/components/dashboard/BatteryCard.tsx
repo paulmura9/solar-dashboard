@@ -1,7 +1,7 @@
 "use client";
 
 import type { FC } from "react";
-import { BatteryCharging, BatteryFull, BatteryMedium, BatteryLow } from "lucide-react";
+import { BatteryCharging, BatteryFull, BatteryMedium, BatteryLow, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
@@ -17,6 +17,12 @@ interface BatteryCardProps {
   secondsAgo?: number | null;
 }
 
+// Estimated percent is clamped to the physical 0..100 range before display.
+function clampPercent(pct: number | null): number | null {
+  if (pct == null) return null;
+  return Math.max(0, Math.min(100, pct));
+}
+
 function getBatteryColor(pct: number | null): string {
   if (pct == null) return "#94a3b8";
   if (pct >= SOLAR_CONFIG.battery.goodPercent) return "#22c55e";
@@ -26,27 +32,46 @@ function getBatteryColor(pct: number | null): string {
 
 interface StatusStyle { bg: string; color: string; border: string }
 
+// Activity status only (charge/discharge/full/idle). Low/critical is a separate
+// percent-derived warning, not a device status.
 const STATUS_STYLES: Record<BatteryStatus, StatusStyle> = {
   CHARGING:    { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
   DISCHARGING: { bg: "#eff6ff", color: "#1e40af", border: "#bfdbfe" },
+  FULL:        { bg: "#ecfdf5", color: "#047857", border: "#a7f3d0" },
   IDLE:        { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
-  LOW:         { bg: "#fef2f2", color: "#991b1b", border: "#fca5a5" },
   UNKNOWN:     { bg: "#f8fafc", color: "#64748b", border: "#e2e8f0" },
 };
+
+// Fallback for any status value outside the firmware set.
+const DEFAULT_STATUS_STYLE: StatusStyle = STATUS_STYLES.UNKNOWN;
+
+interface BatteryAlert { text: string; bg: string; color: string; border: string }
+
+// Low/critical warning derived from the estimated percent. null → no warning.
+function batteryAlert(pct: number | null): BatteryAlert | null {
+  if (pct == null) return null;
+  if (pct <= SOLAR_CONFIG.battery.criticalPercent)
+    return { text: "Critical: estimated battery level very low", bg: "#fef2f2", color: "#991b1b", border: "#fca5a5" };
+  if (pct <= SOLAR_CONFIG.battery.warningPercent)
+    return { text: "Low estimated battery level", bg: "#fffbeb", color: "#92400e", border: "#fde68a" };
+  return null;
+}
 
 function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number | null }) {
   const cls = "text-blue-500";
   if (status === "CHARGING") return <BatteryCharging size={13} className={cls} />;
-  if (pct != null && pct >= 80) return <BatteryFull size={13} className={cls} />;
-  if (pct != null && pct >= 40) return <BatteryMedium size={13} className={cls} />;
+  if (status === "FULL") return <BatteryFull size={13} className={cls} />;
+  if (pct != null && pct >= SOLAR_CONFIG.battery.fullPercent) return <BatteryFull size={13} className={cls} />;
+  if (pct != null && pct >= SOLAR_CONFIG.battery.mediumPercent) return <BatteryMedium size={13} className={cls} />;
   return <BatteryLow size={13} className={cls} />;
 }
 
 const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
-  const pct = r?.battery_percent ?? null;
+  const pct = clampPercent(r?.battery_percent ?? null);
   const status = r?.battery_status ?? null;
   const color = getBatteryColor(pct);
-  const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? STATUS_STYLES.UNKNOWN;
+  const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? DEFAULT_STATUS_STYLE;
+  const alert = batteryAlert(pct);
 
   return (
     <Card className={stale ? "opacity-60" : undefined}>
@@ -69,6 +94,12 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
             <span className="text-3xl font-bold font-mono text-[#94a3b8] leading-none">—</span>
           )}
         </div>
+        <p
+          className="text-[10px] text-[#94a3b8] -mt-1"
+          title="Estimated from battery voltage — no coulomb counting or current integration"
+        >
+          Estimated charge level
+        </p>
         <div className="h-2 rounded-full bg-[#e2e8f0] overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700"
@@ -90,6 +121,15 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
             ) : "—"}
           />
         </div>
+        {alert && (
+          <div
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium"
+            style={{ background: alert.bg, color: alert.color, border: `1px solid ${alert.border}` }}
+          >
+            <AlertTriangle size={12} className="shrink-0" />
+            {alert.text}
+          </div>
+        )}
         {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>

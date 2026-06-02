@@ -35,8 +35,16 @@ export const SOLAR_CONFIG = {
     outlierDropPct: 40,
   },
   battery: {
+    // Header icon tiers (estimated charge level → battery glyph).
+    fullPercent: 80,
+    mediumPercent: 40,
+    // Color tiers for the percent hero number and fill bar.
     goodPercent: 70,
     lowColorPercent: 30,
+    // Low/critical warning thresholds. The warning is derived client-side from
+    // the estimated percent; battery_status no longer carries LOW/CRITICAL.
+    warningPercent: 30,
+    criticalPercent: 15,
   },
   dirt: {
     cleanThreshold: 20,

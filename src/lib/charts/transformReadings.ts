@@ -6,6 +6,7 @@ export interface DashboardChartPoint {
   time: string;
   solar: number;
   voltage: number;
+  percent: number;
   elevation: number;
   charging: number;
 }
@@ -63,6 +64,7 @@ export function transformDashboardChart(
     time: toTime(r.timestamp),
     solar: Number(r.solar_power) || 0,
     voltage: Number(r.battery_voltage) || 0,
+    percent: Math.max(0, Math.min(100, Number(r.battery_percent) || 0)),
     elevation: r.vertical_angle,
     charging: Number(r.charging_power) || 0,
   }));

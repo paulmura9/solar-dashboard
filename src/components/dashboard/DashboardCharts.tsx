@@ -44,7 +44,7 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Battery Voltage (V)</CardTitle>
+          <CardTitle className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Battery (V / est. %)</CardTitle>
         </CardHeader>
         <CardContent>
           <div style={{ width: "100%", height: 200 }}>
@@ -52,9 +52,11 @@ function DashboardChartsBase({ data }: DashboardChartsProps) {
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" V" width={40} domain={[6, 9]} />
+                <YAxis yAxisId="v" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" V" width={40} domain={[6, 9]} />
+                <YAxis yAxisId="pct" orientation="right" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="%" width={36} domain={[0, 100]} />
                 <Tooltip {...TOOLTIP_STYLE} />
-                <Line type="monotone" dataKey="voltage" name="Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line yAxisId="v" type="monotone" dataKey="voltage" name="Voltage (V)" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line yAxisId="pct" type="monotone" dataKey="percent" name="Est. charge (%)" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 2" dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -1,5 +1,5 @@
 export type TrackingMode = "AUTO" | "MANUAL" | "IDLE" | "NIGHT" | "ERROR";
-export type BatteryStatus = "CHARGING" | "DISCHARGING" | "IDLE" | "LOW" | "UNKNOWN";
+export type BatteryStatus = "CHARGING" | "DISCHARGING" | "FULL" | "IDLE" | "UNKNOWN";
 export type CommandType = "SET_MODE" | "MOVE_PANEL" | "RESET_POSITION" | "REQUEST_STATUS" | "START_TRACKING" | "STOP_TRACKING";
 export type CommandStatus = "PENDING" | "SENT" | "ACKNOWLEDGED" | "FAILED";
 export type Severity = "INFO" | "WARNING" | "ERROR" | "CRITICAL";
