@@ -40,3 +40,11 @@ export function formatPower(w: number | null | undefined): string {
   if (w === null || w === undefined) return "—";
   return `${w.toFixed(1)} W`;
 }
+
+// Always renders watt-hours. Unlike formatEnergy (which switches to mWh for tiny
+// solar values), the battery's net-energy-today figure stays in Wh, so a real
+// zero reads "0.00 Wh" rather than the misleading "0 mWh".
+export function formatWh(wh: number | null | undefined): string {
+  if (wh == null) return "—";
+  return `${wh.toFixed(2)} Wh`;
+}

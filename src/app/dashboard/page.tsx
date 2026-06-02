@@ -17,7 +17,6 @@ import { useLatestVision } from "@/hooks/api/useLatestVision";
 import StaleDataBanner from "@/components/StaleDataBanner";
 import SolarProductionCard from "@/components/dashboard/SolarProductionCard";
 import BatteryCard from "@/components/dashboard/BatteryCard";
-import ChargingCard from "@/components/dashboard/ChargingCard";
 import TrackingStatusCard from "@/components/dashboard/TrackingStatusCard";
 import LightSensorsCard from "@/components/dashboard/LightSensorsCard";
 import WeatherDataCard from "@/components/dashboard/WeatherDataCard";
@@ -134,10 +133,9 @@ export default function OverviewPage() {
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
           <SolarProductionCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <BatteryCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
-          <ChargingCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <TrackingStatusCard data={panelStatus} vision={vision} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <LightSensorsCard
             data={panelStatus?.lightSensors ?? null}

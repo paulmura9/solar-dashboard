@@ -5,7 +5,7 @@ import { BatteryCharging, BatteryFull, BatteryMedium, BatteryLow, AlertTriangle 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
-import { formatVoltage } from "@/lib/solar/energy";
+import { formatVoltage, formatPower, formatWh, formatCurrentMa } from "@/lib/solar/energy";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
@@ -73,6 +73,12 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
   const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? DEFAULT_STATUS_STYLE;
   const alert = batteryAlert(pct);
 
+  // Charging figures are NET (INA219 on the battery: charge minus load), not gross
+  // panel/MPPT output. Show an idle state rather than a fabricated number when not charging.
+  const chargePower = r?.charging_power ?? null;
+  const isCharging = chargePower != null && chargePower > 0;
+  const chargeRate = chargePower == null ? "—" : isCharging ? formatPower(chargePower) : "Idle";
+
   return (
     <Card className={stale ? "opacity-60" : undefined}>
       <CardHeader className="pb-2">
@@ -130,6 +136,12 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
             {alert.text}
           </div>
         )}
+        <div className="pt-1">
+          <p className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-wider mb-1">Charging</p>
+          <MetricRow label="Charge rate (net)" value={chargeRate} />
+          <MetricRow label="Net into battery today" value={formatWh(r?.charged_energy_today_wh ?? null)} />
+          <MetricRow label="Charge current" value={isCharging ? formatCurrentMa(r?.charging_current ?? null) : "—"} />
+        </div>
         {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
