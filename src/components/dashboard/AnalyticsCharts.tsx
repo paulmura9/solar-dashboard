@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import {
-  AreaChart, Area, LineChart, Line, BarChart, Bar,
+  ComposedChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,19 +16,15 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
   return (
     <div className="space-y-5">
       <Card>
-        <CardHeader><CardTitle className="text-sm font-semibold text-[#1e293b]">Solar Power (W)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm font-semibold text-[#1e293b]">Power: gross vs net (W)</CardTitle></CardHeader>
         <CardContent>
           <div style={{ width: "100%", height: CHART_H }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={series.power}>
+              <ComposedChart data={series.power}>
                 <defs>
                   <linearGradient id="solarGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="chargeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -36,11 +32,18 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" W" width={48} />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
-                <Area type="monotone" dataKey="solar"    name="Solar Power"    stroke="#f59e0b" fill="url(#solarGrad)"  strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Area type="monotone" dataKey="charging" name="Charging Power" stroke="#3b82f6" fill="url(#chargeGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
-              </AreaChart>
+                {/* Same W axis on purpose: the vertical gap between the gross area and the net
+                    line reads directly as system self-consumption. Net is a crisp line (not a
+                    second opaque area) so it stays legible even when it sits well below gross. */}
+                <Area type="monotone" dataKey="solar"    name="Panel output (gross)" stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="charging" name="Into battery (net)"   stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} isAnimationActive={false} />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <p className="mt-2 text-[10px] text-[#64748b] leading-relaxed">
+            Gap between the two lines is the system&apos;s own consumption (gross − net). Net into battery
+            can read 0 W / Idle when the battery is full or the load matches charging — that is expected, not a gap in data.
+          </p>
         </CardContent>
       </Card>
 

@@ -48,7 +48,7 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
             <Sun size={13} className="text-amber-500" />
-            Light Sensors
+            Light Levels
           </CardTitle>
           <Badge variant={getBalanceBadgeVariant(status)} className="text-[10px]">
             {BALANCE_LABELS[status]}

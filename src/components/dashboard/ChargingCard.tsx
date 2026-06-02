@@ -3,7 +3,8 @@
 import type { FC } from "react";
 import { Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPower, formatWh, formatCurrentMa } from "@/lib/solar/energy";
+import { NumberTicker } from "@/components/magic/NumberTicker";
+import { formatPower, formatWh, formatCurrentMa, siToMilli } from "@/lib/solar/energy";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading } from "@/lib/types";
@@ -30,6 +31,18 @@ const ChargingCard: FC<ChargingCardProps> = ({ reading: r, stale = false, second
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        <div className="flex items-end gap-1.5">
+          {chargePower != null ? (
+            <>
+              <span className="text-3xl font-bold font-mono text-[#1e293b] leading-none">
+                <NumberTicker value={siToMilli(chargePower)} decimalPlaces={1} />
+              </span>
+              <span className="text-sm text-[#64748b] pb-0.5">mW</span>
+            </>
+          ) : (
+            <span className="text-3xl font-bold font-mono text-[#94a3b8] leading-none">—</span>
+          )}
+        </div>
         <div>
           <MetricRow label="Charge rate (net)" value={chargeRate} />
           <MetricRow label="Net into battery today" value={formatWh(r?.charged_energy_today_wh ?? null)} />

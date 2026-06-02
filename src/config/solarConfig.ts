@@ -23,7 +23,10 @@ export const SOLAR_CONFIG = {
     maxValue: 4095,
     nightThreshold: 100,
     lowLightThreshold: 500,
-    balanceDeadband: 50,
+    // |H/V diff| balance tolerance (raw ADC). BALANCED while both diffs stay within this band
+    // (~10% of max |diff| = 2*4095); UNBALANCED only past 3x this (~31%), so small-to-medium
+    // imbalances read as balanced/adjusting and only a clearly large skew trips the badge.
+    balanceDeadband: 850,
     // Per-sensor "this side is dark" threshold for the Night/Dark light-state indicator.
     // Tune after LDR calibration; intentionally separate from lowLightThreshold.
     darkThreshold: 500,

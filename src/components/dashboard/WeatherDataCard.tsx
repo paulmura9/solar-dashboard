@@ -3,19 +3,11 @@ import WbCloudy from "@mui/icons-material/WbCloudy";
 import { Clock, Sunrise, Sunset } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSunTime } from "@/lib/solar/weather";
-import type { WeatherData, WeatherStatus } from "@/lib/types";
+import type { WeatherData } from "@/lib/types";
 
 interface WeatherDataCardProps {
   data: WeatherData | null;
 }
-
-const CONDITION_NOTES: Record<WeatherStatus, string> = {
-  CLEAR:         "Tracking active — fine adjustments",
-  PARTLY_CLOUDY: "Tracking calm — slower movements",
-  CLOUDY:        "Position frozen — no tracking benefit",
-  RAIN:          "Position frozen — no tracking benefit",
-  UNKNOWN:       "Awaiting sensor data",
-};
 
 function roundToHalfHour(date: Date): string {
   const mins = date.getHours() * 60 + date.getMinutes();
@@ -44,9 +36,6 @@ function formatDaylight(sunrise: string, sunset: string): string {
 }
 
 const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
-  const status = data?.weatherStatus ?? "UNKNOWN";
-  const note = CONDITION_NOTES[status];
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -105,10 +94,6 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
             ))
           )}
         </div>
-
-        <p className="text-[10px] text-[#64748b] italic leading-relaxed border-t border-[#e2e8f0] pt-2">
-          {note}
-        </p>
 
         {data && (
           <div className="flex items-center gap-1 text-[10px] text-[#c0cad8]">
