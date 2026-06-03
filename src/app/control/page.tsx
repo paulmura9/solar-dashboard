@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Compass } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export default function ControlPage() {
   const { data: commands } = useCommands(10);
 
   const [optimisticTarget, setOptimisticTarget] = useState<OptimisticTarget | null>(null);
+  const [showCalibration, setShowCalibration] = useState(false);
   const optimisticRevertRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -113,7 +115,17 @@ export default function ControlPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-[#1e293b] flex items-center justify-between">
               <span>Panel Visualization</span>
-              <span className="text-xs font-normal text-[#64748b]">Live telemetry</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-normal text-[#64748b]"
+                aria-expanded={showCalibration}
+                onClick={() => setShowCalibration((v) => !v)}
+                title="Show the Sky View calibration dome (real sun position vs panel)"
+              >
+                <Compass />
+                Calibration
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -138,6 +150,17 @@ export default function ControlPage() {
           </CardContent>
         </Card>
       </ErrorBoundary>
+
+      {showCalibration && (
+        <ErrorBoundary>
+          <SunTrackerCard
+            panelAzimuth={latest?.horizontal_angle ?? null}
+            panelElevation={latest?.vertical_angle ?? null}
+            latitude={SOLAR_CONFIG.weather.locationLat}
+            longitude={SOLAR_CONFIG.weather.locationLon}
+          />
+        </ErrorBoundary>
+      )}
 
       <ErrorBoundary>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -208,15 +231,6 @@ export default function ControlPage() {
             </CardContent>
           </Card>
         </div>
-      </ErrorBoundary>
-
-      <ErrorBoundary>
-        <SunTrackerCard
-          panelAzimuth={latest?.horizontal_angle ?? null}
-          panelElevation={latest?.vertical_angle ?? null}
-          latitude={SOLAR_CONFIG.weather.locationLat}
-          longitude={SOLAR_CONFIG.weather.locationLon}
-        />
       </ErrorBoundary>
 
       <ErrorBoundary>

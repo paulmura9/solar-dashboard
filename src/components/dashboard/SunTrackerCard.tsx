@@ -186,6 +186,10 @@ export default function SunTrackerCard({
           <text x={CX + DOME_R + 4} y={HORIZON_Y + 4} textAnchor="start" fontSize="11" fill="#64748b" fontWeight="600">W</text>
           <text x={CX} y={HORIZON_Y - DOME_R - 6} textAnchor="middle" fontSize="11" fill="#64748b" fontWeight="600">S</text>
 
+          {/* Sunrise glyph at East, sunset glyph at West */}
+          <HorizonSun x={CX - DOME_R + 12} color="#f59e0b" />
+          <HorizonSun x={CX + DOME_R - 12} color="#f97316" />
+
           {sky && (
             <>
               {/* Sun path for today */}
@@ -223,10 +227,22 @@ export default function SunTrackerCard({
 
               {/* Real sun position now */}
               {sunPx && (
-                <g filter="url(#sun-glow)">
-                  <circle cx={sunPx.x} cy={sunPx.y} r="7" fill="#fbbf24" />
-                  <circle cx={sunPx.x} cy={sunPx.y} r="3.5" fill="#f59e0b" />
-                </g>
+                <>
+                  <g filter="url(#sun-glow)">
+                    <circle cx={sunPx.x} cy={sunPx.y} r="7" fill="#fbbf24" />
+                    <circle cx={sunPx.x} cy={sunPx.y} r="3.5" fill="#f59e0b" />
+                  </g>
+                  <text
+                    x={sunPx.x + (sunPx.x > CX ? -10 : 10)}
+                    y={sunPx.y - 9}
+                    textAnchor={sunPx.x > CX ? "end" : "start"}
+                    fontSize="9"
+                    fontWeight="600"
+                    fill="#b45309"
+                  >
+                    Sun (now)
+                  </text>
+                </>
               )}
             </>
           )}
@@ -241,8 +257,38 @@ export default function SunTrackerCard({
             value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"}
           />
         </div>
+
+        <p className="mt-3 text-[10px] leading-snug text-[#94a3b8]">
+          Aim HOME (servo 90°) toward true South. The arc tracks the sun from sunrise (East) to sunset (West).
+        </p>
       </CardContent>
     </Card>
+  );
+}
+
+/** A small half-sun resting on the horizon line, used to mark sunrise (E) and sunset (W). */
+function HorizonSun({ x, color }: { x: number; color: string }) {
+  const r = 6;
+  const rays = [-50, -25, 0, 25, 50];
+  return (
+    <g>
+      <path d={`M ${x - r} ${HORIZON_Y} A ${r} ${r} 0 0 1 ${x + r} ${HORIZON_Y} Z`} fill={color} />
+      {rays.map((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        return (
+          <line
+            key={deg}
+            x1={x + (r + 2) * Math.sin(rad)}
+            y1={HORIZON_Y - (r + 2) * Math.cos(rad)}
+            x2={x + (r + 5) * Math.sin(rad)}
+            y2={HORIZON_Y - (r + 5) * Math.cos(rad)}
+            stroke={color}
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </g>
   );
 }
 

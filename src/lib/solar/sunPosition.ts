@@ -54,18 +54,20 @@ export function sunArc(lat: number, lon: number, times: SunTimes): SkyPoint[] {
 
 /**
  * Map the panel's two servo angles to the sky direction its face points at.
- * horizontal_angle is read as a compass bearing (matching AzimuthView). The
- * elevation servo sweeps the face from the horizon (0°) through the zenith (90°)
- * to the opposite horizon (180°); past 90° the face points across the zenith, so
- * the bearing flips by 180°. There is no encoder feedback — this is the commanded
- * pointing direction, not a measured one.
+ * Mounting assumption (matching AzimuthView): the azimuth servo's HOME (90°) aims
+ * the panel at true South, sweeping 0° → East and 180° → West, so the compass
+ * bearing is the servo angle + 90°. The elevation servo sweeps the face from the
+ * horizon (0°) through the zenith (90°) to the opposite horizon (180°); past 90°
+ * the face points across the zenith, so the bearing flips by 180°. There is no
+ * encoder feedback — this is the commanded pointing direction, not a measured one.
  */
 export function panelSkyPoint(horizontalAngle: number, verticalAngle: number): SkyPoint {
   const normalize = (deg: number): number => ((deg % 360) + 360) % 360;
+  const bearing = horizontalAngle + 90;
   if (verticalAngle <= 90) {
-    return { azimuth: normalize(horizontalAngle), elevation: verticalAngle };
+    return { azimuth: normalize(bearing), elevation: verticalAngle };
   }
-  return { azimuth: normalize(horizontalAngle + 180), elevation: 180 - verticalAngle };
+  return { azimuth: normalize(bearing + 180), elevation: 180 - verticalAngle };
 }
 
 /**
