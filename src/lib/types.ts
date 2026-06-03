@@ -86,7 +86,6 @@ export interface DeviceCommand {
   acknowledged_at: string | null;
 }
 
-export type BalanceStatus = "BALANCED" | "ADJUSTING" | "UNBALANCED" | "NIGHT" | "LOW_LIGHT";
 export type PanelMode = "TRACKING" | "MANUAL" | "IDLE" | "ERROR" | "NIGHT";
 export type WeatherStatus = "CLEAR" | "PARTLY_CLOUDY" | "CLOUDY" | "RAIN" | "UNKNOWN";
 export type LightState = "NIGHT" | "DARK" | "NORMAL" | "UNKNOWN";
@@ -99,7 +98,6 @@ export interface LightSensorData {
   bottomRight: number | null;
   horizontalDiff: number | null;
   verticalDiff: number | null;
-  balanceStatus: BalanceStatus;
 }
 
 export interface WeatherData {

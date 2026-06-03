@@ -38,7 +38,6 @@ interface PanelCommandsReturn {
   resetPosition: () => Promise<void>;
   startTracking: () => Promise<void>;
   stopTracking: () => Promise<void>;
-  requestStatus: () => Promise<void>;
 }
 
 export function usePanelCommands(token: string | null): PanelCommandsReturn {
@@ -126,7 +125,6 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
   const resetPosition = useCallback(() => dispatch("RESET_POSITION"), [dispatch]);
   const startTracking = useCallback(() => dispatch("START_TRACKING"),  [dispatch]);
   const stopTracking  = useCallback(() => dispatch("STOP_TRACKING"),   [dispatch]);
-  const requestStatus = useCallback(() => dispatch("REQUEST_STATUS"),  [dispatch]);
 
   return {
     sending: sendingCount > 0,
@@ -137,6 +135,5 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
     resetPosition,
     startTracking,
     stopTracking,
-    requestStatus,
   };
 }

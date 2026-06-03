@@ -144,6 +144,7 @@ export default function OverviewPage() {
             stale={isStale}
             secondsAgo={secondsSinceLastReading}
             lightState={lightState}
+            trackingError={panelStatus?.mode === "ERROR"}
           />
           <WeatherDataCard data={weatherData} />
         </div>

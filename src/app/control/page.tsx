@@ -58,7 +58,7 @@ export default function ControlPage() {
     setOptimisticTarget(null);
   }, []);
 
-  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, requestStatus, isCommandCooldown } =
+  const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
     usePanelCommands(token);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
@@ -173,15 +173,6 @@ export default function ControlPage() {
                 title={isStale ? "Telemetry stale - cannot send commands safely" : undefined}
               >
                 Stop Tracking
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-[#e2e8f0] text-[#64748b] hover:border-[#94a3b8] text-sm font-medium"
-                onClick={() => { void requestStatus(); }}
-                disabled={sending || !esp32Online}
-                title="Ask the device to report its current status"
-              >
-                Request Status
               </Button>
 
               {lastResult && (

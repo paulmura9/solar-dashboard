@@ -4,23 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import LdrSensorCell from "./LdrSensorCell";
 import LastUpdatedStamp from "./LastUpdatedStamp";
-import { getBalanceBadgeVariant } from "@/lib/solar/status";
 import { formatHorizontalDiff, formatVerticalDiff, detectLdrOutliers } from "@/lib/solar/lightState";
-import type { LightSensorData, BalanceStatus, LightState } from "@/lib/types";
+import type { LightSensorData, LightState } from "@/lib/types";
 
 interface LightSensorsCardProps {
   data: LightSensorData | null;
   stale?: boolean;
   secondsAgo?: number | null;
   lightState?: LightState;
+  trackingError?: boolean;
 }
 
-const BALANCE_LABELS: Record<BalanceStatus, string> = {
-  BALANCED:   "Balanced",
-  ADJUSTING:  "Adjusting",
-  UNBALANCED: "Unbalanced",
-  NIGHT:      "Night",
-  LOW_LIGHT:  "Low Light",
+type LightBadge = { label: string; variant: "outline" | "destructive"; className: string };
+
+// The badge only surfaces states that carry information: an active tracking ERROR,
+// or the device/inferred NIGHT and daytime DARK conditions. Night/dark are taken
+// verbatim from the dashboard's computeLightState (tracking_mode + sunrise/sunset);
+// this card never re-infers them. Everything else (normal AUTO/IDLE/MANUAL) shows
+// no badge.
+const ERROR_BADGE: LightBadge = { label: "Error", variant: "destructive", className: "text-[10px]" };
+const NIGHT_BADGE: LightBadge = { label: "Night", variant: "outline", className: "text-[10px]" };
+const DARK_BADGE: LightBadge = {
+  label: "Dark",
+  variant: "outline",
+  className: "text-[10px] border-amber-200 bg-amber-50 text-amber-700",
 };
 
 const LightSensorsCard: FC<LightSensorsCardProps> = ({
@@ -28,11 +35,15 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
   stale = false,
   secondsAgo = null,
   lightState = "UNKNOWN",
+  trackingError = false,
 }) => {
-  const status: BalanceStatus = data?.balanceStatus ?? "NIGHT";
-  // NIGHT is shown once, by the Tracking Status mode badge (device tracking_mode). Here we
-  // only surface the frontend-inferred DARK (daytime low-light) condition the device never reports.
-  const showDark = lightState === "DARK";
+  const badge: LightBadge | null = trackingError
+    ? ERROR_BADGE
+    : lightState === "NIGHT"
+      ? NIGHT_BADGE
+      : lightState === "DARK"
+        ? DARK_BADGE
+        : null;
 
   const ldrValues = [
     data?.topLeft ?? null,
@@ -50,9 +61,25 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
             <Sun size={13} className="text-amber-500" />
             Light Levels
           </CardTitle>
-          <Badge variant={getBalanceBadgeVariant(status)} className="text-[10px]">
-            {BALANCE_LABELS[status]}
-          </Badge>
+          {badge && (
+            <Badge variant={badge.variant} className={badge.className}>
+              {badge.label}
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-x-4 mt-1.5 text-[10px] tabular-nums">
+          <span className="flex items-center gap-1">
+            <span className="uppercase tracking-wider text-[#94a3b8]">H diff</span>
+            <span className="font-mono font-medium text-[#1e293b]">
+              {formatHorizontalDiff(data?.horizontalDiff ?? null)}
+            </span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="uppercase tracking-wider text-[#94a3b8]">V diff</span>
+            <span className="font-mono font-medium text-[#1e293b]">
+              {formatVerticalDiff(data?.verticalDiff ?? null)}
+            </span>
+          </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -62,28 +89,6 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
           <LdrSensorCell label="Bottom Left"  value={ldrValues[2]} isOutlier={blOutlier} />
           <LdrSensorCell label="Bottom Right" value={ldrValues[3]} isOutlier={brOutlier} />
         </div>
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#e2e8f0]">
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wider text-[#94a3b8] mb-0.5">H diff</p>
-            <p className="text-sm font-mono font-medium text-[#1e293b] tabular-nums">
-              {formatHorizontalDiff(data?.horizontalDiff ?? null)}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wider text-[#94a3b8] mb-0.5">V diff</p>
-            <p className="text-sm font-mono font-medium text-[#1e293b] tabular-nums">
-              {formatVerticalDiff(data?.verticalDiff ?? null)}
-            </p>
-          </div>
-        </div>
-        {showDark && (
-          <div className="flex items-center justify-center gap-1.5 pt-1 border-t border-[#e2e8f0]">
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold border border-amber-200 bg-amber-50 text-amber-700">
-              Dark
-            </span>
-            <span className="text-[10px] text-[#94a3b8]">Low light (daytime)</span>
-          </div>
-        )}
         {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
     </Card>
