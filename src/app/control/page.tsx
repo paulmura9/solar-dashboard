@@ -9,6 +9,8 @@ import { BorderBeam } from "@/components/magic/BorderBeam";
 import ElevationView from "@/components/ElevationView";
 import AzimuthView from "@/components/AzimuthView";
 import PanelControlCard from "@/components/dashboard/PanelControlCard";
+import SunTrackerCard from "@/components/dashboard/SunTrackerCard";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
@@ -215,6 +217,15 @@ export default function ControlPage() {
             </CardContent>
           </Card>
         </div>
+      </ErrorBoundary>
+
+      <ErrorBoundary>
+        <SunTrackerCard
+          panelAzimuth={latest?.horizontal_angle ?? null}
+          panelElevation={latest?.vertical_angle ?? null}
+          latitude={SOLAR_CONFIG.weather.locationLat}
+          longitude={SOLAR_CONFIG.weather.locationLon}
+        />
       </ErrorBoundary>
 
       <ErrorBoundary>
