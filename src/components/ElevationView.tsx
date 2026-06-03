@@ -10,14 +10,10 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
   const tilt = elevationAngle - 90;
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Elevation</p>
-      <div className="flex items-center justify-center">
       <svg
-        width="300"
-        height="230"
         viewBox="0 0 300 230"
-        className="overflow-visible"
+        className="w-full max-w-[300px] h-auto overflow-visible"
+        aria-label="Panel elevation tilt"
       >
         <line
           x1="60" y1="200" x2="240" y2="200"
@@ -54,7 +50,5 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
           90°
         </text>
       </svg>
-      </div>
-    </div>
   );
 }

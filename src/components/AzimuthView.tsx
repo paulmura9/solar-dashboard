@@ -33,10 +33,7 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
   const perpY = dirX;
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Horizontal</p>
-      <div className="flex items-center justify-center">
-        <svg width="240" height="150" viewBox="0 0 240 150">
+        <svg viewBox="0 0 240 150" className="w-full max-w-[240px] h-auto" aria-label="Panel horizontal servo angle">
           <path
             d={`M ${CX - R} ${BASE_Y} A ${R} ${R} 0 0 1 ${CX + R} ${BASE_Y} Z`}
             fill="#f8fafc"
@@ -81,7 +78,5 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
           <circle cx={CX} cy={BASE_Y} r="5" fill="#3b82f6" />
           <circle cx={CX} cy={BASE_Y} r="2.5" fill="#ffffff" />
         </svg>
-      </div>
-    </div>
   );
 }

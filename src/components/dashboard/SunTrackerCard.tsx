@@ -202,7 +202,7 @@ export default function SunTrackerCard({
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[440px]">
+        <div className="relative w-full">
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             className="block w-full h-auto"
@@ -296,6 +296,11 @@ export default function SunTrackerCard({
             </div>
           )}
         </div>
+
+        <p className="mt-3 text-[10px] leading-snug text-[#94a3b8]">
+          Calibration: set the panel to HOME (servo 90°), then physically rotate the whole base
+          until it faces true South. Use Reset Position to send it to 90°.
+        </p>
 
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1 text-xs">
           <Stat label="Sun azimuth" value={sunAzimuth != null ? `${Math.round(sunAzimuth)}°` : "—"} />
