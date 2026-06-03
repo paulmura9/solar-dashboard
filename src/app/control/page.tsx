@@ -132,14 +132,14 @@ export default function ControlPage() {
             {/* Titles, illustrations and readouts in one 2-column grid so each row's
                 cells share an exact baseline (both titles align) and each column stays
                 centred over its illustration. */}
-            <div className="mx-auto grid max-w-md grid-cols-2 items-center gap-x-4 gap-y-3 pt-1 text-center">
+            <div className="mx-auto grid max-w-2xl grid-cols-2 items-center gap-x-4 gap-y-3 pt-1 text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-[#64748b]">Elevation</p>
               <p className="text-xs font-bold uppercase tracking-widest text-[#64748b]">Horizontal</p>
 
               <div className="flex items-center justify-center">
                 <ElevationView elevationAngle={displayV} />
               </div>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center pt-6">
                 <AzimuthView azimuthAngle={displayH} />
               </div>
 

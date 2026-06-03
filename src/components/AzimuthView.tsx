@@ -33,7 +33,7 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
   const perpY = dirX;
 
   return (
-        <svg viewBox="0 0 240 150" className="w-full max-w-[120px] h-auto" aria-label="Panel horizontal servo angle">
+        <svg viewBox="0 0 240 150" className="w-full max-w-[240px] h-auto" aria-label="Panel horizontal servo angle">
           <path
             d={`M ${CX - R} ${BASE_Y} A ${R} ${R} 0 0 1 ${CX + R} ${BASE_Y} Z`}
             fill="#f8fafc"

@@ -25,8 +25,10 @@ interface SunTrackerCardProps {
 }
 
 // SVG geometry: a 2:1 half-dome. The semicircle is centred on the horizon line.
-const VIEW_W = 400;
-const VIEW_H = 196; // semicircle (R=150) + tight padding above S and below the E/W baseline
+const VIEW_X = 35; // crop the empty side margins so the dome fills the frame
+const VIEW_Y = 8; // minimal padding above the S label
+const VIEW_W = 330; // dome span (300) + small left/right padding
+const VIEW_H = 182; // semicircle (R=150) + tight padding above S and below the E/W baseline
 const CX = 200;
 const HORIZON_Y = 180;
 const DOME_R = 150;
@@ -202,9 +204,9 @@ export default function SunTrackerCard({
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-sm">
+        <div className="relative mx-auto w-full max-w-2xl">
           <svg
-            viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+            viewBox={`${VIEW_X} ${VIEW_Y} ${VIEW_W} ${VIEW_H}`}
             className="block w-full h-auto"
             role="img"
             aria-label="Sky dome showing the real sun position versus the panel's commanded direction"

@@ -12,7 +12,7 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
   return (
       <svg
         viewBox="0 0 300 230"
-        className="w-full max-w-[150px] h-auto overflow-visible"
+        className="w-full max-w-[300px] h-auto overflow-visible"
         aria-label="Panel elevation tilt"
       >
         <line
