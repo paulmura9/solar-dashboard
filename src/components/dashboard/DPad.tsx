@@ -14,7 +14,7 @@ const DPad: FC<DPadProps> = ({ onDirection, disabled = false }) => (
     <Button
       variant="outline"
       size="icon"
-      className="w-10 h-10 border-[#e2e8f0] hover:border-[#3b82f6] hover:text-[#3b82f6]"
+      className="w-10 h-10 border-[#cbd5e1] text-[#64748b] shadow-sm hover:border-[#3b82f6] hover:text-[#3b82f6]"
       disabled={disabled}
       onClick={() => onDirection("UP")}
       aria-label="Move up"
@@ -26,20 +26,20 @@ const DPad: FC<DPadProps> = ({ onDirection, disabled = false }) => (
     <Button
       variant="outline"
       size="icon"
-      className="w-10 h-10 border-[#e2e8f0] hover:border-[#3b82f6] hover:text-[#3b82f6]"
+      className="w-10 h-10 border-[#cbd5e1] text-[#64748b] shadow-sm hover:border-[#3b82f6] hover:text-[#3b82f6]"
       disabled={disabled}
       onClick={() => onDirection("LEFT")}
       aria-label="Move left"
     >
       <ChevronLeft size={15} />
     </Button>
-    <div className="w-10 h-10 rounded-lg bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center">
+    <div className="w-10 h-10 rounded-lg bg-[#f1f5f9] border border-[#cbd5e1] shadow-sm flex items-center justify-center">
       <div className="w-2 h-2 rounded-full bg-[#cbd5e1]" />
     </div>
     <Button
       variant="outline"
       size="icon"
-      className="w-10 h-10 border-[#e2e8f0] hover:border-[#3b82f6] hover:text-[#3b82f6]"
+      className="w-10 h-10 border-[#cbd5e1] text-[#64748b] shadow-sm hover:border-[#3b82f6] hover:text-[#3b82f6]"
       disabled={disabled}
       onClick={() => onDirection("RIGHT")}
       aria-label="Move right"
@@ -51,7 +51,7 @@ const DPad: FC<DPadProps> = ({ onDirection, disabled = false }) => (
     <Button
       variant="outline"
       size="icon"
-      className="w-10 h-10 border-[#e2e8f0] hover:border-[#3b82f6] hover:text-[#3b82f6]"
+      className="w-10 h-10 border-[#cbd5e1] text-[#64748b] shadow-sm hover:border-[#3b82f6] hover:text-[#3b82f6]"
       disabled={disabled}
       onClick={() => onDirection("DOWN")}
       aria-label="Move down"

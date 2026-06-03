@@ -300,15 +300,21 @@ export default function SunTrackerCard({
         </div>
 
         <p className="mt-3 text-[10px] leading-snug text-[#94a3b8]">
-          Calibration: set the panel to HOME (servo 90°), then physically rotate the whole base
-          until it faces true South. Use Reset Position to send it to 90°.
+          Calibration: press Reset Position to center the panel (90°/90°), then physically rotate
+          the whole base until the panel faces true South.
         </p>
 
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1 text-xs">
-          <Stat label="Sun azimuth" value={sunAzimuth != null ? `${Math.round(sunAzimuth)}°` : "—"} />
-          <Stat label="Sun elevation" value={sunAltitude != null ? `${Math.round(sunAltitude)}°` : "Below horizon"} />
+        <div className="mt-3 grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
+          <Stat
+            label="Sun position"
+            value={
+              sunAzimuth != null
+                ? `${Math.round(sunAzimuth)}° az · ${Math.round(sunAltitude!)}° alt`
+                : "Below horizon"
+            }
+          />
           <Stat label="Daylight" value={sunStatus} />
-          <Stat label="Azimuth offset" value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"} />
+          <Stat label="Tracking offset" value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"} />
         </div>
       </CardContent>
     </Card>

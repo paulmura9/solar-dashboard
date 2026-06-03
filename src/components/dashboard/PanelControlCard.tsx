@@ -47,13 +47,6 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isStale && (
-          <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            <AlertTriangle size={12} className="shrink-0" />
-            <span>Telemetry stale - commands disabled for safety</span>
-          </div>
-        )}
-
         <div className="flex gap-2">
           {MODES.map(({ mode, label }) => (
             <Button

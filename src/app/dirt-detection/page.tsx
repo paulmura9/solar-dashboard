@@ -319,6 +319,9 @@ export default function DirtDetectionPage() {
                       </Badge>
                     )}
                   </div>
+                  <p className="mt-1.5 text-xs text-[#94a3b8]">
+                    Severity estimate from the vision model, not the share of surface covered.
+                  </p>
                   <div className="mt-3 h-3 bg-[#f1f5f9] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
@@ -330,11 +333,7 @@ export default function DirtDetectionPage() {
                   </div>
                 </div>
 
-                <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs ${qualityFailed ? "opacity-40" : ""}`}>
-                  <div>
-                    <p className="text-[#94a3b8] mb-0.5">Cleanliness</p>
-                    <p className="font-semibold text-[#1e293b]">{qualityFailed ? "—" : `${fmt(latest.cleanliness_percent)} %`}</p>
-                  </div>
+                <div className={`grid grid-cols-3 gap-4 pt-2 text-xs ${qualityFailed ? "opacity-40" : ""}`}>
                   <div>
                     <p className="text-[#94a3b8] mb-0.5">Confidence</p>
                     <p className="font-semibold text-[#1e293b]">

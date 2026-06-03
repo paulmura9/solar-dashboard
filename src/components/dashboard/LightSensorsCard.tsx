@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import LdrSensorCell from "./LdrSensorCell";
 import LastUpdatedStamp from "./LastUpdatedStamp";
-import { formatHorizontalDiff, formatVerticalDiff, detectLdrOutliers } from "@/lib/solar/lightState";
+import { formatHorizontalDiff, formatVerticalDiff, detectLdrOutliers, isLdrUnbalanced } from "@/lib/solar/lightState";
 import type { LightSensorData, LightState } from "@/lib/types";
 
 interface LightSensorsCardProps {
@@ -17,18 +17,24 @@ interface LightSensorsCardProps {
 
 type LightBadge = { label: string; variant: "outline" | "destructive"; className: string };
 
-// The badge only surfaces states that carry information: an active tracking ERROR,
-// or the device/inferred NIGHT and daytime DARK conditions. Night/dark are taken
-// verbatim from the dashboard's computeLightState (tracking_mode + sunrise/sunset);
-// this card never re-infers them. Everything else (normal AUTO/IDLE/MANUAL) shows
-// no badge.
+// The badge surfaces only states that carry information, in priority order: an active
+// tracking ERROR, device/inferred NIGHT, daytime LOW_LIGHT, or a clearly UNBALANCED light
+// skew. NIGHT/LOW_LIGHT come verbatim from the dashboard's computeLightState (tracking_mode
+// + sunrise/sunset) and are checked before balance, since near-zero night/low-light LDRs
+// make H/V diffs noise that must not read as an imbalance. Everything else shows no badge —
+// the steady balanced/adjusting states are intentionally silent to avoid clutter.
 const ERROR_BADGE: LightBadge = { label: "Error", variant: "destructive", className: "text-[10px]" };
-const NIGHT_BADGE: LightBadge = { label: "Night", variant: "outline", className: "text-[10px]" };
-const DARK_BADGE: LightBadge = {
-  label: "Dark",
+const NIGHT_BADGE: LightBadge = {
+  label: "Night",
+  variant: "outline",
+  className: "text-[10px] border-slate-200 bg-slate-50 text-slate-600",
+};
+const LOW_LIGHT_BADGE: LightBadge = {
+  label: "Low Light",
   variant: "outline",
   className: "text-[10px] border-amber-200 bg-amber-50 text-amber-700",
 };
+const UNBALANCED_BADGE: LightBadge = { label: "Unbalanced", variant: "destructive", className: "text-[10px]" };
 
 const LightSensorsCard: FC<LightSensorsCardProps> = ({
   data,
@@ -41,9 +47,11 @@ const LightSensorsCard: FC<LightSensorsCardProps> = ({
     ? ERROR_BADGE
     : lightState === "NIGHT"
       ? NIGHT_BADGE
-      : lightState === "DARK"
-        ? DARK_BADGE
-        : null;
+      : lightState === "LOW_LIGHT"
+        ? LOW_LIGHT_BADGE
+        : isLdrUnbalanced(data)
+          ? UNBALANCED_BADGE
+          : null;
 
   const ldrValues = [
     data?.topLeft ?? null,

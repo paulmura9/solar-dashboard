@@ -22,14 +22,13 @@ export const SOLAR_CONFIG = {
   ldr: {
     maxValue: 4095,
     nightThreshold: 100,
+    // Per-sensor low-light threshold for the daytime LOW_LIGHT light-state indicator: a
+    // majority of sensors reading below this counts as low light. Tune after LDR calibration.
     lowLightThreshold: 500,
-    // |H/V diff| balance tolerance (raw ADC). BALANCED while both diffs stay within this band
-    // (~10% of max |diff| = 2*4095); UNBALANCED only past 3x this (~31%), so small-to-medium
-    // imbalances read as balanced/adjusting and only a clearly large skew trips the badge.
+    // |H/V diff| balance tolerance (raw ADC, ~10% of max |diff| = 2*4095). A diff stays
+    // unremarkable within this band; the UNBALANCED badge only trips past 3x it (~31%), so
+    // small-to-medium tracking skew shows no badge and only a clearly large skew surfaces.
     balanceDeadband: 850,
-    // Per-sensor "this side is dark" threshold for the Night/Dark light-state indicator.
-    // Tune after LDR calibration; intentionally separate from lowLightThreshold.
-    darkThreshold: 500,
     // |H/V diff| below this is treated as balanced noise (matches firmware LDR_DEADBAND);
     // no direction arrow is shown within this band.
     diffNeutralBand: 350,

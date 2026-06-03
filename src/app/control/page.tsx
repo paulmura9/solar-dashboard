@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Compass } from "lucide-react";
+import { Compass, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -189,6 +189,18 @@ export default function ControlPage() {
               <CardTitle className="text-sm font-semibold text-[#1e293b]">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {isStale ? (
+                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <AlertTriangle size={12} className="shrink-0" />
+                  <span>Telemetry stale - commands disabled for safety</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-[#64748b]">
+                  <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+                  <span>Device online - commands active</span>
+                </div>
+              )}
+
               <Button
                 className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium"
                 onClick={() => { void startTracking(); }}
@@ -218,14 +230,6 @@ export default function ControlPage() {
               )}
 
               <div className="pt-2 border-t border-[#e2e8f0] space-y-1 text-xs text-[#64748b]">
-                <div className="flex justify-between">
-                  <span>Estimated horizontal angle</span>
-                  <span className="font-semibold text-[#1e293b]">{hAngle}°</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Estimated vertical angle</span>
-                  <span className="font-semibold text-[#1e293b]">{vAngle}°</span>
-                </div>
                 {activeTarget && (
                   <div className="flex justify-between text-[#94a3b8]">
                     <span>Commanded target</span>
