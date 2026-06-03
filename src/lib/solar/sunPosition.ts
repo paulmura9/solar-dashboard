@@ -52,22 +52,42 @@ export function sunArc(lat: number, lon: number, times: SunTimes): SkyPoint[] {
   return points;
 }
 
+const normalizeDeg = (deg: number): number => ((deg % 360) + 360) % 360;
+
 /**
- * Map the panel's two servo angles to the sky direction its face points at.
- * Mounting assumption (matching AzimuthView): the azimuth servo's HOME (90°) aims
- * the panel at true South, sweeping 0° → East and 180° → West, so the compass
- * bearing is the servo angle + 90°. The elevation servo sweeps the face from the
- * horizon (0°) through the zenith (90°) to the opposite horizon (180°); past 90°
- * the face points across the zenith, so the bearing flips by 180°. There is no
- * encoder feedback — this is the commanded pointing direction, not a measured one.
+ * The panel's commanded compass bearing. Mounting assumption (matching AzimuthView):
+ * the azimuth servo's HOME (90°) aims the panel at true South, sweeping 0° → East and
+ * 180° → West, so the compass bearing is the servo angle + 90°. This is the single
+ * source of that "+90" mapping — reuse it, do not re-derive it elsewhere.
+ */
+export function panelBearing(horizontalAngle: number): number {
+  return normalizeDeg(horizontalAngle + 90);
+}
+
+/** Nearest of the three visible cardinals (E/S/W) within ±22.5°, or null if between two. */
+export function closestCardinal(bearing: number): "E" | "S" | "W" | null {
+  const cardinals: { label: "E" | "S" | "W"; deg: number }[] = [
+    { label: "E", deg: 90 },
+    { label: "S", deg: 180 },
+    { label: "W", deg: 270 },
+  ];
+  const hit = cardinals.find((c) => Math.abs(normalizeDeg(bearing) - c.deg) <= 22.5);
+  return hit ? hit.label : null;
+}
+
+/**
+ * Map the panel's two servo angles to the sky direction its face points at. The
+ * azimuth comes from {@link panelBearing}. The elevation servo sweeps the face from
+ * the horizon (0°) through the zenith (90°) to the opposite horizon (180°); past 90°
+ * the face points across the zenith, so the bearing flips by 180°. There is no encoder
+ * feedback — this is the commanded pointing direction, not a measured one.
  */
 export function panelSkyPoint(horizontalAngle: number, verticalAngle: number): SkyPoint {
-  const normalize = (deg: number): number => ((deg % 360) + 360) % 360;
-  const bearing = horizontalAngle + 90;
+  const bearing = panelBearing(horizontalAngle);
   if (verticalAngle <= 90) {
-    return { azimuth: normalize(bearing), elevation: verticalAngle };
+    return { azimuth: bearing, elevation: verticalAngle };
   }
-  return { azimuth: normalize(bearing + 180), elevation: 180 - verticalAngle };
+  return { azimuth: normalizeDeg(bearing + 180), elevation: 180 - verticalAngle };
 }
 
 /**

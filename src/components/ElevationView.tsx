@@ -15,8 +15,8 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
       <div className="flex-1 flex items-center justify-center">
       <svg
         width="300"
-        height="220"
-        viewBox="0 0 300 220"
+        height="230"
+        viewBox="0 0 300 230"
         className="overflow-visible"
       >
         <line

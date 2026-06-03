@@ -82,7 +82,7 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision, stale =
         </div>
 
         <div className="flex items-center justify-between pt-1 border-t border-[#e2e8f0]">
-          <span className="text-xs text-[#64748b]">Dirt level</span>
+          <span className="text-xs text-[#64748b]">Soiling Score</span>
           <span
             className="text-xs font-mono font-medium"
             style={{ color: dirtColor(vision?.dirt_level_percent ?? null) }}

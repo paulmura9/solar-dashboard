@@ -35,7 +35,15 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseDomain = supabaseUrl.replace(/^https?:\/\//, "").split(".")[0];
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-export default function SettingsClient({ lastSignInAt }: { lastSignInAt: string | null }) {
+export default function SettingsClient({
+  lastSignInAt,
+  email,
+  name,
+}: {
+  lastSignInAt: string | null;
+  email: string | null;
+  name: string | null;
+}) {
   const { data: devices, isInitialLoad } = useDevices();
 
   if (isInitialLoad) return <SettingsSkeleton />;
@@ -56,6 +64,18 @@ export default function SettingsClient({ lastSignInAt }: { lastSignInAt: string 
             <CardTitle className="text-sm font-semibold text-[#1e293b]">Account</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-[#64748b]">
+            {email && (
+              <div className="flex justify-between">
+                <span>Email</span>
+                <span className="text-[#1e293b] font-medium">{email}</span>
+              </div>
+            )}
+            {name && (
+              <div className="flex justify-between">
+                <span>Name</span>
+                <span className="text-[#1e293b] font-medium">{name}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Last login</span>
               <span className="text-[#1e293b] font-medium tabular-nums" suppressHydrationWarning>
@@ -125,7 +145,6 @@ export default function SettingsClient({ lastSignInAt }: { lastSignInAt: string 
                 <TableRow className="border-[#e2e8f0]">
                   <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Device</TableHead>
                   <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Status</TableHead>
-                  <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Firmware</TableHead>
                   <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Last Seen</TableHead>
                 </TableRow>
               </TableHeader>
@@ -149,7 +168,6 @@ export default function SettingsClient({ lastSignInAt }: { lastSignInAt: string 
                           {d.is_online ? "Online" : "Offline"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[#64748b]">{d.firmware_version ?? "—"}</TableCell>
                       <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>
                         {d.last_seen
                           ? new Date(d.last_seen).toLocaleString("ro-RO", {

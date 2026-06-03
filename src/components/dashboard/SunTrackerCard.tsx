@@ -2,11 +2,14 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
 import {
   sunPositionAt,
   sunTimesAt,
   sunArc,
   panelSkyPoint,
+  panelBearing,
+  closestCardinal,
   projectToDome,
   angularSeparation,
   type SkyPoint,
@@ -29,11 +32,26 @@ const HORIZON_Y = 180;
 const DOME_R = 150;
 const ELEVATION_GUIDES = [30, 60]; // degrees, drawn as faint reference curves
 const REFRESH_MS = 60_000;
+const { minAngle: H_MIN, maxAngle: H_MAX } = SOLAR_CONFIG.panel;
 
 /** Project a sky point into SVG pixel coordinates within the dome. */
 function toPixels(point: SkyPoint): { x: number; y: number } {
   const { x, y } = projectToDome(point);
   return { x: CX + x * DOME_R, y: HORIZON_Y - y * DOME_R };
+}
+
+/**
+ * Panel marker tip on the E–S–W dome: horizontal_angle sets the angle along the arc
+ * (servo − 90°, so H_MIN → E/left, 90° → S/top, H_MAX → W/right) and the elevation
+ * servo sets the radius (90° → full radius on the arc, 0°/180° → the horizon centre).
+ * Always lands inside the semicircle, anchored at the centre baseline.
+ */
+function panelNeedleTip(horizontalAngle: number, verticalAngle: number): { x: number; y: number } {
+  const clampedH = Math.min(H_MAX, Math.max(H_MIN, horizontalAngle));
+  const elevation = Math.max(0, 90 - Math.abs(verticalAngle - 90)); // panel-normal elevation, 0..90
+  const radius = (elevation / 90) * DOME_R;
+  const angle = ((clampedH - 90) * Math.PI) / 180;
+  return { x: CX + radius * Math.sin(angle), y: HORIZON_Y - radius * Math.cos(angle) };
 }
 
 function pointsToPolyline(points: SkyPoint[]): string {
@@ -95,12 +113,25 @@ export default function SunTrackerCard({
         ? panelSkyPoint(panelAzimuth, panelElevation)
         : null;
     const offset = panel && sun.elevation > 0 ? angularSeparation(sun, panel) : null;
-    return { times, sun, arc, panel, offset };
+    return { times, sun, arc, offset };
   }, [now, latitude, longitude, panelAzimuth, panelElevation]);
 
   const sunUp = sky != null && sky.sun.elevation > 0;
   const sunPx = sunUp ? toPixels(sky!.sun) : null;
-  const panelPx = sky?.panel ? toPixels(sky.panel) : null;
+  const panelTip =
+    panelAzimuth != null && panelElevation != null
+      ? panelNeedleTip(panelAzimuth, panelElevation)
+      : null;
+
+  // Numeric overlay (#8): panel servo → commanded compass bearing (the shared +90 mapping)
+  // and its nearest cardinal; sun's real azimuth/elevation from the same suncalc position.
+  const panelReadout =
+    panelAzimuth != null
+      ? `Panel: ${Math.round(panelAzimuth)}° → ${Math.round(panelBearing(panelAzimuth))}° ${closestCardinal(panelBearing(panelAzimuth)) ?? ""}`.trimEnd()
+      : "Panel: —";
+  const sunReadout = sunUp
+    ? `Sun: ${Math.round(sky!.sun.azimuth)}° (alt ${Math.round(sky!.sun.elevation)}°)`
+    : "Sun: below horizon";
 
   let sunStatus = "—";
   if (sky && now) {
@@ -131,12 +162,17 @@ export default function SunTrackerCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <svg
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="w-full h-auto"
-          role="img"
-          aria-label="Sky dome showing the real sun position versus the panel's commanded direction"
-        >
+        <div className="relative mx-auto w-[62%] min-w-[240px]">
+          <div className="absolute left-1 top-1 text-[10px] leading-tight text-[#64748b]">
+            <div>{panelReadout}</div>
+            <div>{sunReadout}</div>
+          </div>
+          <svg
+            viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+            className="block w-full h-auto"
+            role="img"
+            aria-label="Sky dome showing the real sun position versus the panel's commanded direction"
+          >
           <defs>
             <radialGradient id="sky-fill" cx="50%" cy="100%" r="100%">
               <stop offset="0%" stopColor="#fef3c7" />
@@ -204,24 +240,23 @@ export default function SunTrackerCard({
                 />
               )}
 
-              {/* Offset connector between panel and sun */}
-              {sunPx && panelPx && (
-                <line
-                  x1={sunPx.x}
-                  y1={sunPx.y}
-                  x2={panelPx.x}
-                  y2={panelPx.y}
-                  stroke="#94a3b8"
-                  strokeWidth="1"
-                  strokeDasharray="2 2"
-                />
-              )}
-
-              {/* Panel commanded direction */}
-              {panelPx && (
-                <g transform={`translate(${panelPx.x}, ${panelPx.y}) rotate(45)`}>
-                  <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
-                  <rect x="-2" y="-2" width="4" height="4" fill="#ffffff" rx="0.5" />
+              {/* Panel commanded direction: needle from the dome centre to a diamond tip */}
+              {panelTip && (
+                <g>
+                  <line
+                    x1={CX}
+                    y1={HORIZON_Y}
+                    x2={panelTip.x}
+                    y2={panelTip.y}
+                    stroke="#3b82f6"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  <g transform={`translate(${panelTip.x}, ${panelTip.y}) rotate(45)`}>
+                    <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
+                    <rect x="-2" y="-2" width="4" height="4" fill="#ffffff" rx="0.5" />
+                  </g>
+                  <circle cx={CX} cy={HORIZON_Y} r="3" fill="#3b82f6" />
                 </g>
               )}
 
@@ -246,7 +281,8 @@ export default function SunTrackerCard({
               )}
             </>
           )}
-        </svg>
+          </svg>
+        </div>
 
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
           <Stat label="Sun azimuth" value={sunUp ? `${Math.round(sky!.sun.azimuth)}°` : "—"} />

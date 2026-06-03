@@ -13,6 +13,7 @@ interface AzimuthViewProps {
 const CX = 120;
 const BASE_Y = 120;
 const R = 100;
+const NEEDLE_LEN = Math.round(R * 0.84); // tip stays comfortably inside the arc
 const TICK_SERVO_ANGLES = [0, 45, 90, 135, 180];
 
 const { minAngle: H_MIN, maxAngle: H_MAX } = SOLAR_CONFIG.panel;
@@ -52,18 +53,19 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
           <text x={CX} y={BASE_Y - R - 6} textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">S</text>
           <text x={CX + R + 4} y={BASE_Y + 4} textAnchor="start" fontSize="11" fill="#64748b" fontFamily="inherit" fontWeight="600">W</text>
 
-          <text x={CX - R + 12} y={BASE_Y - 7} textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">0°</text>
-          <text x={CX} y={BASE_Y - R + 12} textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">90°</text>
-          <text x={CX + R - 12} y={BASE_Y - 7} textAnchor="middle" fontSize="8" fill="#94a3b8" fontFamily="inherit">180°</text>
-
+          {/* Needle pivots on the semicircle's geometric centre (CX, BASE_Y); tip reaches
+              NEEDLE_LEN (84% of R) so it stays inside the arc through the full sweep. */}
           <motion.g
             style={{ transformBox: "view-box", transformOrigin: `${CX}px ${BASE_Y}px` }}
             animate={{ rotate: clamped - 90 }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
           >
-            <line x1={CX} y1={BASE_Y} x2={CX} y2={BASE_Y - 85} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-            <polygon points={`${CX - 6},${BASE_Y - 77} ${CX},${BASE_Y - 90} ${CX + 6},${BASE_Y - 77}`} fill="#3b82f6" />
-            <line x1={CX} y1={BASE_Y} x2={CX} y2={BASE_Y + 16} stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+            <line x1={CX} y1={BASE_Y} x2={CX} y2={BASE_Y - NEEDLE_LEN} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+            <polygon
+              points={`${CX - 6},${BASE_Y - NEEDLE_LEN + 12} ${CX},${BASE_Y - NEEDLE_LEN} ${CX + 6},${BASE_Y - NEEDLE_LEN + 12}`}
+              fill="#3b82f6"
+            />
+            <line x1={CX} y1={BASE_Y} x2={CX} y2={BASE_Y + 12} stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
           </motion.g>
 
           <circle cx={CX} cy={BASE_Y} r="5" fill="#3b82f6" />

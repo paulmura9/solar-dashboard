@@ -228,7 +228,7 @@ export default function DirtDetectionPage() {
             <div className="space-y-0.5">
               <p className="text-base font-semibold text-[#991b1b]">Panel needs cleaning</p>
               <p className="text-xs text-[#b91c1c]">
-                Estimated dirt level: {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"} %
+                Estimated soiling score: {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"} %
               </p>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function DirtDetectionPage() {
                       {!qualityFailed && latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
                     </span>
                     <span className="text-lg text-[#94a3b8]">%</span>
-                    <span className="text-sm text-[#64748b] ml-1">dirt level</span>
+                    <span className="text-sm text-[#64748b] ml-1">Soiling Score</span>
                     {latest.predicted_class && (
                       <Badge
                         variant="outline"
@@ -315,6 +315,7 @@ export default function DirtDetectionPage() {
                       }}
                     />
                   </div>
+                  <p className="mt-1.5 text-[11px] text-[#94a3b8]">Severity score (0-100), not surface coverage.</p>
                 </div>
 
                 <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs ${qualityFailed ? "opacity-40" : ""}`}>
@@ -363,7 +364,7 @@ export default function DirtDetectionPage() {
                         </div>
                       </div>
                       <p className="text-[10px] text-[#64748b] leading-relaxed border-t border-[#e8edf5] pt-2.5">
-                        At {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}% dirt coverage, the panel surface
+                        At {latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}% soiling score, the panel surface
                         transmittance is reduced by an estimated {(energyImpact.lossFactor * 100).toFixed(1)}%,
                         resulting in approximately {formatPower(energyImpact.powerLostW)} of lost output.
                       </p>
@@ -453,7 +454,7 @@ export default function DirtDetectionPage() {
                 <TableHeader>
                   <TableRow className="border-[#e2e8f0]">
                     <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Date</TableHead>
-                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Dirt Level</TableHead>
+                    <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Soiling Score</TableHead>
                     <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Cleanliness</TableHead>
                     <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Cleaning</TableHead>
                     <TableHead className="text-xs text-[#94a3b8] uppercase tracking-wider">Confidence</TableHead>

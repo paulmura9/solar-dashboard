@@ -129,7 +129,7 @@ export default function ControlPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row items-stretch justify-center gap-10">
+            <div className="flex flex-col md:flex-row items-stretch md:items-end justify-center gap-10">
               <ElevationView elevationAngle={displayV} />
               <AzimuthView azimuthAngle={displayH} />
             </div>
@@ -147,6 +147,9 @@ export default function ControlPage() {
                 )}
               </span>
             </div>
+            <p className="text-center mt-1 text-[10px] text-[#94a3b8]">
+              Estimated panel azimuth = horizontal_angle + 90° (0°=E / 90°=S / 180°=W)
+            </p>
           </CardContent>
         </Card>
       </ErrorBoundary>
