@@ -38,6 +38,15 @@ const PREDICTED_CLASS_BADGE: Record<
   dirty:          { label: "Dirty",          style: STATUS_BADGE_ERROR },
 };
 
+// Hero number + bar colour, driven by the predicted_class label so it never
+// contradicts the badge. Reuses existing tokens: green/red from dirtColor's
+// palette, amber (#92400e text / #f59e0b bar) from STATUS_BADGE_WARNING / solar-amber.
+const SEVERITY_COLOR: Record<"clean" | "slightly_dirty" | "dirty", { text: string; bar: string }> = {
+  clean:          { text: "#22c55e", bar: "#22c55e" },
+  slightly_dirty: { text: STATUS_BADGE_WARNING.color as string, bar: "#f59e0b" },
+  dirty:          { text: "#ef4444", bar: "#ef4444" },
+};
+
 function dirtIcon(pct: number, cleaning: boolean) {
   if (pct > 35 || cleaning) return <AlertTriangle size={18} className="text-red-500" />;
   if (pct > 20) return <AlertTriangle size={18} className="text-amber-500" />;
@@ -219,6 +228,10 @@ export default function DirtDetectionPage() {
 
   const energyImpact = latest && !qualityFailed ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 
+  // Colour the hero value/bar by the class label (not the numeric percent) so they
+  // agree with the badge; null class or a quality failure keeps the neutral grey.
+  const severityColor = !qualityFailed && latest?.predicted_class ? SEVERITY_COLOR[latest.predicted_class] : null;
+
   return (
     <ErrorBoundary>
       <div className="space-y-5">
@@ -290,7 +303,7 @@ export default function DirtDetectionPage() {
                   <div className="flex items-baseline gap-2">
                     <span
                       className="text-5xl font-bold tabular-nums"
-                      style={{ color: !qualityFailed && latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8" }}
+                      style={{ color: severityColor?.text ?? "#94a3b8" }}
                     >
                       {!qualityFailed && latest.dirt_level_percent != null ? latest.dirt_level_percent.toFixed(1) : "—"}
                     </span>
@@ -311,11 +324,10 @@ export default function DirtDetectionPage() {
                       className="h-full rounded-full transition-all duration-700"
                       style={{
                         width: qualityFailed ? "0%" : `${latest.dirt_level_percent ?? 0}%`,
-                        background: !qualityFailed && latest.dirt_level_percent != null ? dirtColor(latest.dirt_level_percent) : "#94a3b8",
+                        background: severityColor?.bar ?? "#94a3b8",
                       }}
                     />
                   </div>
-                  <p className="mt-1.5 text-[11px] text-[#94a3b8]">Severity score (0-100), not surface coverage.</p>
                 </div>
 
                 <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 text-xs ${qualityFailed ? "opacity-40" : ""}`}>

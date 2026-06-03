@@ -162,10 +162,15 @@ export default function SunTrackerCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative mx-auto w-[62%] min-w-[240px]">
+        <div className="relative mx-auto w-[52%] min-w-[220px]">
           <div className="absolute left-1 top-1 text-[10px] leading-tight text-[#64748b]">
             <div>{panelReadout}</div>
             <div>{sunReadout}</div>
+          </div>
+          {/* Encoding legend (fix 4): what the panel arrow's angle and length mean */}
+          <div className="pointer-events-none absolute right-1 top-1 text-right text-[8px] leading-tight text-[#94a3b8]">
+            <div>arrow angle → azimuth (E·S·W)</div>
+            <div>arrow length → elevation</div>
           </div>
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -284,7 +289,7 @@ export default function SunTrackerCard({
           </svg>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
+        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
           <Stat label="Sun azimuth" value={sunUp ? `${Math.round(sky!.sun.azimuth)}°` : "—"} />
           <Stat label="Sun elevation" value={sunUp ? `${Math.round(sky!.sun.elevation)}°` : "Below horizon"} />
           <Stat label="Daylight" value={sunStatus} />
@@ -294,8 +299,8 @@ export default function SunTrackerCard({
           />
         </div>
 
-        <p className="mt-3 text-[10px] leading-snug text-[#94a3b8]">
-          Aim HOME (servo 90°) toward true South. The arc tracks the sun from sunrise (East) to sunset (West).
+        <p className="mt-2 text-[10px] leading-snug text-[#94a3b8]">
+          Estimated panel azimuth = horizontal_angle + 90° (0°=E / 90°=S / 180°=W). HOME (servo 90°) aims at true South.
         </p>
       </CardContent>
     </Card>

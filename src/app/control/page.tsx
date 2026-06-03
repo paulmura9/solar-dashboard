@@ -133,7 +133,7 @@ export default function ControlPage() {
               <ElevationView elevationAngle={displayV} />
               <AzimuthView azimuthAngle={displayH} />
             </div>
-            <div className="flex justify-center gap-10 mt-2 text-xs text-[#64748b]">
+            <div className="flex justify-center items-baseline gap-10 mt-2 text-xs text-[#64748b]">
               <span>
                 Estimated vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong>
                 {activeTarget && activeTarget.v !== vAngle && (
@@ -147,9 +147,6 @@ export default function ControlPage() {
                 )}
               </span>
             </div>
-            <p className="text-center mt-1 text-[10px] text-[#94a3b8]">
-              Estimated panel azimuth = horizontal_angle + 90° (0°=E / 90°=S / 180°=W)
-            </p>
           </CardContent>
         </Card>
       </ErrorBoundary>

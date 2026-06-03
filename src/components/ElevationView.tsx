@@ -55,11 +55,6 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
         </text>
       </svg>
       </div>
-
-      <p className="text-xs text-[#64748b]">
-        Elevation:{" "}
-        <span className="font-semibold text-[#1e293b]">{elevationAngle}°</span>
-      </p>
     </div>
   );
 }
