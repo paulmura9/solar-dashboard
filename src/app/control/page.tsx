@@ -12,6 +12,7 @@ import AzimuthView from "@/components/AzimuthView";
 import PanelControlCard from "@/components/dashboard/PanelControlCard";
 import SunTrackerCard from "@/components/dashboard/SunTrackerCard";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
+import { panelAlignment } from "@/lib/solar/sunPosition";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
@@ -70,6 +71,7 @@ export default function ControlPage() {
   const currentMode = latest?.tracking_mode ?? null;
   const hAngle = latest?.horizontal_angle ?? 90;
   const vAngle = latest?.vertical_angle ?? 90;
+  const azAlign = panelAlignment(hAngle); // cardinal panel azimuth + alignment readout
   const targetReached = !!(
     optimisticTarget &&
     latest &&
@@ -133,19 +135,25 @@ export default function ControlPage() {
               <ElevationView elevationAngle={displayV} />
               <AzimuthView azimuthAngle={displayH} />
             </div>
-            <div className="flex justify-center items-baseline gap-10 mt-2 text-xs text-[#64748b]">
-              <span>
+            <div className="flex justify-center items-start gap-10 mt-2 text-xs text-[#64748b]">
+              <div className="text-center">
                 Estimated vertical angle: <strong className="text-[#1e293b]">{vAngle}°</strong>
                 {activeTarget && activeTarget.v !== vAngle && (
                   <span className="ml-1 text-[#94a3b8]">(commanded {activeTarget.v}°)</span>
                 )}
-              </span>
-              <span>
-                Estimated horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong>
-                {activeTarget && activeTarget.h !== hAngle && (
-                  <span className="ml-1 text-[#94a3b8]">(commanded {activeTarget.h}°)</span>
-                )}
-              </span>
+              </div>
+              <div className="text-center">
+                <div>
+                  Estimated horizontal angle: <strong className="text-[#1e293b]">{hAngle}°</strong>
+                  {activeTarget && activeTarget.h !== hAngle && (
+                    <span className="ml-1 text-[#94a3b8]">(commanded {activeTarget.h}°)</span>
+                  )}
+                </div>
+                <div className="mt-0.5">
+                  Panel azimuth: <strong className="text-[#1e293b]">{Math.round(azAlign.cardinal)}°</strong>{" "}
+                  <span className="text-[#94a3b8]">({azAlign.label})</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

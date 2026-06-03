@@ -54,40 +54,60 @@ export function sunArc(lat: number, lon: number, times: SunTimes): SkyPoint[] {
 
 const normalizeDeg = (deg: number): number => ((deg % 360) + 360) % 360;
 
-/**
- * The panel's commanded compass bearing. Mounting assumption (matching AzimuthView):
- * the azimuth servo's HOME (90°) aims the panel at true South, sweeping 0° → East and
- * 180° → West, so the compass bearing is the servo angle + 90°. This is the single
- * source of that "+90" mapping — reuse it, do not re-derive it elsewhere.
- */
+// ───────────────────────────────────────────────────────────────────────────
+// CANONICAL AZIMUTH CONVENTION (single source of truth — mirrored in CLAUDE.md).
+// "horizontal angle" = the raw azimuth servo angle, 0..180, HOME at 90°.
+// "azimuth"          = the cardinal compass bearing, NEVER the raw servo angle:
+//     panel azimuth = horizontal_angle + 90      (range 90..270)
+//     0°=E  /  90°=S  /  180°=W      HOME (servo 90°) aims at true South.
+// The sun's azimuth comes from suncalc (0..360, measured from North).
+// Never render this formula in the UI — show values only.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** The panel's commanded compass (cardinal) azimuth, 90..270. */
 export function panelBearing(horizontalAngle: number): number {
   return normalizeDeg(horizontalAngle + 90);
 }
 
-/** Nearest of the three visible cardinals (E/S/W) within ±22.5°, or null if between two. */
-export function closestCardinal(bearing: number): "E" | "S" | "W" | null {
-  const cardinals: { label: "E" | "S" | "W"; deg: number }[] = [
-    { label: "E", deg: 90 },
-    { label: "S", deg: 180 },
-    { label: "W", deg: 270 },
-  ];
-  const hit = cardinals.find((c) => Math.abs(normalizeDeg(bearing) - c.deg) <= 22.5);
-  return hit ? hit.label : null;
+export interface PanelAlignment {
+  /** Cardinal panel azimuth, 90..270. */
+  cardinal: number;
+  /** Human label, e.g. "Aimed at S" or "≈ S, +10° toward W". */
+  label: string;
 }
 
+const PANEL_CARDINALS = [
+  { label: "E" as const, deg: 90 },
+  { label: "S" as const, deg: 180 },
+  { label: "W" as const, deg: 270 },
+];
+
 /**
- * Map the panel's two servo angles to the sky direction its face points at. The
- * azimuth comes from {@link panelBearing}. The elevation servo sweeps the face from
- * the horizon (0°) through the zenith (90°) to the opposite horizon (180°); past 90°
- * the face points across the zenith, so the bearing flips by 180°. There is no encoder
- * feedback — this is the commanded pointing direction, not a measured one.
+ * Cardinal alignment readout for the panel: nearest of {E,S,W} and the signed offset
+ * toward a neighbouring cardinal. Shared by the compass card and the dome overlay —
+ * do not re-implement the nearest-cardinal logic elsewhere.
  */
-export function panelSkyPoint(horizontalAngle: number, verticalAngle: number): SkyPoint {
-  const bearing = panelBearing(horizontalAngle);
-  if (verticalAngle <= 90) {
-    return { azimuth: bearing, elevation: verticalAngle };
+export function panelAlignment(horizontalAngle: number): PanelAlignment {
+  const cardinal = panelBearing(horizontalAngle);
+  let nearest = PANEL_CARDINALS[0];
+  for (const c of PANEL_CARDINALS) {
+    if (Math.abs(cardinal - c.deg) < Math.abs(cardinal - nearest.deg)) nearest = c;
   }
-  return { azimuth: normalizeDeg(bearing + 180), elevation: 180 - verticalAngle };
+  const offset = Math.round(cardinal - nearest.deg); // signed: + = toward W
+  if (Math.abs(offset) <= 5) return { cardinal, label: `Aimed at ${nearest.label}` };
+  const dir = nearest.label === "S" ? (offset > 0 ? "W" : "E") : "S";
+  return { cardinal, label: `≈ ${nearest.label}, +${Math.abs(offset)}° toward ${dir}` };
+}
+
+/** Eight-point compass label (N/NE/E/SE/S/SW/W/NW) for a 0..360 azimuth (the sun). */
+export function compass8(azimuth: number): string {
+  return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(normalizeDeg(azimuth) / 45) % 8];
+}
+
+/** Plain azimuth delta between two bearings, wrapped to [0, 180]. */
+export function azimuthDelta(a: number, b: number): number {
+  const d = Math.abs(normalizeDeg(a) - normalizeDeg(b)) % 360;
+  return d > 180 ? 360 - d : d;
 }
 
 /**
@@ -104,17 +124,4 @@ export function projectToDome(point: SkyPoint): { x: number; y: number } {
     x: -Math.sin(az) * Math.cos(el),
     y: Math.sin(el),
   };
-}
-
-/** Great-circle angle between two sky directions, in degrees. */
-export function angularSeparation(a: SkyPoint, b: SkyPoint): number {
-  const toUnitVector = (p: SkyPoint): [number, number, number] => {
-    const az = p.azimuth * DEG_TO_RAD;
-    const el = p.elevation * DEG_TO_RAD;
-    return [Math.sin(az) * Math.cos(el), Math.cos(az) * Math.cos(el), Math.sin(el)];
-  };
-  const [ax, ay, az] = toUnitVector(a);
-  const [bx, by, bz] = toUnitVector(b);
-  const dot = ax * bx + ay * by + az * bz;
-  return Math.acos(Math.min(1, Math.max(-1, dot))) * RAD_TO_DEG;
 }

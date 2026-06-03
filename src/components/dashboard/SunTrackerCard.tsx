@@ -7,16 +7,16 @@ import {
   sunPositionAt,
   sunTimesAt,
   sunArc,
-  panelSkyPoint,
   panelBearing,
-  closestCardinal,
+  panelAlignment,
+  compass8,
+  azimuthDelta,
   projectToDome,
-  angularSeparation,
   type SkyPoint,
 } from "@/lib/solar/sunPosition";
 
 interface SunTrackerCardProps {
-  /** latest.horizontal_angle, or null when telemetry is unavailable. */
+  /** latest.horizontal_angle (raw azimuth servo, 0..180), or null when unavailable. */
   panelAzimuth: number | null;
   /** latest.vertical_angle, or null when telemetry is unavailable. */
   panelElevation: number | null;
@@ -108,30 +108,46 @@ export default function SunTrackerCard({
     const times = sunTimesAt(now, latitude, longitude);
     const sun = sunPositionAt(now, latitude, longitude);
     const arc = sunArc(latitude, longitude, times);
-    const panel =
-      panelAzimuth != null && panelElevation != null
-        ? panelSkyPoint(panelAzimuth, panelElevation)
+    // AZIMUTH OFFSET (point 7): plain cardinal-azimuth delta wrapped to [0, 180].
+    const offset =
+      panelAzimuth != null && sun.elevation > 0
+        ? azimuthDelta(panelBearing(panelAzimuth), sun.azimuth)
         : null;
-    const offset = panel && sun.elevation > 0 ? angularSeparation(sun, panel) : null;
     return { times, sun, arc, offset };
-  }, [now, latitude, longitude, panelAzimuth, panelElevation]);
+  }, [now, latitude, longitude, panelAzimuth]);
 
   const sunUp = sky != null && sky.sun.elevation > 0;
-  const sunPx = sunUp ? toPixels(sky!.sun) : null;
+  const sunAzimuth = sunUp ? sky!.sun.azimuth : null;
+  const sunAltitude = sunUp ? sky!.sun.elevation : null;
+
+  const panelCardinalAz = panelAzimuth != null ? panelBearing(panelAzimuth) : null;
+  const align = panelAzimuth != null ? panelAlignment(panelAzimuth) : null;
+
   const panelTip =
     panelAzimuth != null && panelElevation != null
       ? panelNeedleTip(panelAzimuth, panelElevation)
       : null;
 
-  // Numeric overlay (#8): panel servo → commanded compass bearing (the shared +90 mapping)
-  // and its nearest cardinal; sun's real azimuth/elevation from the same suncalc position.
-  const panelReadout =
-    panelAzimuth != null
-      ? `Panel: ${Math.round(panelAzimuth)}° → ${Math.round(panelBearing(panelAzimuth))}° ${closestCardinal(panelBearing(panelAzimuth)) ?? ""}`.trimEnd()
-      : "Panel: —";
-  const sunReadout = sunUp
-    ? `Sun: ${Math.round(sky!.sun.azimuth)}° (alt ${Math.round(sky!.sun.elevation)}°)`
-    : "Sun: below horizon";
+  // Sun marker. The arc only spans cardinal azimuth [90, 270]; when the real sun is
+  // north of E/W (azimuth < 90 or > 270) the panel can't reach it, so we pin the marker
+  // to the nearest endpoint and flag it with an off-arc badge instead of silently clamping.
+  let sunPx: { x: number; y: number } | null = null;
+  let offArcBadge: string | null = null;
+  let offArcSide: "E" | "W" | null = null;
+  if (sunUp) {
+    const az = sky!.sun.azimuth;
+    if (az >= 90 && az <= 270) {
+      sunPx = toPixels(sky!.sun);
+    } else if (az < 90) {
+      sunPx = { x: CX - DOME_R, y: HORIZON_Y };
+      offArcBadge = `off-arc · +${Math.round(90 - az)}° N of E`;
+      offArcSide = "E";
+    } else {
+      sunPx = { x: CX + DOME_R, y: HORIZON_Y };
+      offArcBadge = `off-arc · +${Math.round(az - 270)}° N of W`;
+      offArcSide = "W";
+    }
+  }
 
   let sunStatus = "—";
   if (sky && now) {
@@ -162,146 +178,131 @@ export default function SunTrackerCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative mx-auto w-[52%] min-w-[220px]">
-          <div className="absolute left-1 top-1 text-[10px] leading-tight text-[#64748b]">
-            <div>{panelReadout}</div>
-            <div>{sunReadout}</div>
+        {/* Cardinal-first readout (azimuth is the headline, raw servo is the detail) */}
+        <div className="mb-3 space-y-1.5 text-[13px] text-[#1e293b]">
+          <div>
+            <span className="text-[#64748b]">Panel azimuth</span>{" "}
+            <span className="font-semibold">{panelCardinalAz != null ? `${Math.round(panelCardinalAz)}°` : "—"}</span>
+            {align && <span className="text-[#64748b]">{"  "}({align.label})</span>}
+            <span className="block text-[11px] text-[#94a3b8]">
+              servo {panelAzimuth != null ? `${Math.round(panelAzimuth)}°` : "—"}
+            </span>
           </div>
-          {/* Encoding legend (fix 4): what the panel arrow's angle and length mean */}
-          <div className="pointer-events-none absolute right-1 top-1 text-right text-[8px] leading-tight text-[#94a3b8]">
-            <div>arrow angle → azimuth (E·S·W)</div>
-            <div>arrow length → elevation</div>
+          <div>
+            <span className="text-[#64748b]">Sun azimuth</span>{" "}
+            <span className="font-semibold">{sunAzimuth != null ? `${Math.round(sunAzimuth)}°` : "—"}</span>
+            {sunAzimuth != null ? (
+              <span className="text-[#64748b]">
+                {"  "}(≈ {compass8(sunAzimuth)}) · alt {Math.round(sunAltitude!)}°
+                {Math.abs(sunAltitude!) < 2 ? " (at horizon)" : ""}
+              </span>
+            ) : (
+              <span className="text-[#64748b]">{"  "}below horizon</span>
+            )}
           </div>
+        </div>
+
+        <div className="relative mx-auto w-full max-w-[440px]">
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             className="block w-full h-auto"
             role="img"
             aria-label="Sky dome showing the real sun position versus the panel's commanded direction"
           >
-          <defs>
-            <radialGradient id="sky-fill" cx="50%" cy="100%" r="100%">
-              <stop offset="0%" stopColor="#fef3c7" />
-              <stop offset="35%" stopColor="#e8eef6" />
-              <stop offset="100%" stopColor="#d3e0f0" />
-            </radialGradient>
-            <filter id="sun-glow" x="-150%" y="-150%" width="400%" height="400%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+            <defs>
+              <filter id="sun-glow" x="-150%" y="-150%" width="400%" height="400%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-          {/* Dome atmosphere */}
-          <path
-            d={`M ${CX - DOME_R} ${HORIZON_Y} A ${DOME_R} ${DOME_R} 0 0 1 ${CX + DOME_R} ${HORIZON_Y} Z`}
-            fill="url(#sky-fill)"
-            stroke="#cbd5e1"
-            strokeWidth="1.5"
-          />
-
-          {/* Elevation reference curves */}
-          {ELEVATION_GUIDES.map((el) => (
-            <polyline
-              key={el}
-              points={elevationGuide(el)}
-              fill="none"
+            {/* Dome atmosphere: uniform muted blue (no warm gradient) */}
+            <path
+              d={`M ${CX - DOME_R} ${HORIZON_Y} A ${DOME_R} ${DOME_R} 0 0 1 ${CX + DOME_R} ${HORIZON_Y} Z`}
+              fill="#d7e3f2"
               stroke="#cbd5e1"
-              strokeWidth="0.75"
-              strokeDasharray="3 3"
-              opacity="0.7"
+              strokeWidth="1.5"
             />
-          ))}
 
-          {/* Horizon line + cardinal markers */}
-          <line
-            x1={CX - DOME_R}
-            y1={HORIZON_Y}
-            x2={CX + DOME_R}
-            y2={HORIZON_Y}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
-          />
-          <text x={CX - DOME_R - 4} y={HORIZON_Y + 4} textAnchor="end" fontSize="11" fill="#64748b" fontWeight="600">E</text>
-          <text x={CX + DOME_R + 4} y={HORIZON_Y + 4} textAnchor="start" fontSize="11" fill="#64748b" fontWeight="600">W</text>
-          <text x={CX} y={HORIZON_Y - DOME_R - 6} textAnchor="middle" fontSize="11" fill="#64748b" fontWeight="600">S</text>
+            {/* Elevation reference curves */}
+            {ELEVATION_GUIDES.map((el) => (
+              <polyline
+                key={el}
+                points={elevationGuide(el)}
+                fill="none"
+                stroke="#cbd5e1"
+                strokeWidth="0.75"
+                strokeDasharray="3 3"
+                opacity="0.7"
+              />
+            ))}
 
-          {/* Sunrise glyph at East, sunset glyph at West */}
-          <HorizonSun x={CX - DOME_R + 12} color="#f59e0b" />
-          <HorizonSun x={CX + DOME_R - 12} color="#f97316" />
+            {/* Horizon line + cardinal markers */}
+            <line x1={CX - DOME_R} y1={HORIZON_Y} x2={CX + DOME_R} y2={HORIZON_Y} stroke="#94a3b8" strokeWidth="1.5" />
+            <text x={CX - DOME_R - 4} y={HORIZON_Y + 4} textAnchor="end" fontSize="11" fill="#64748b" fontWeight="600">E</text>
+            <text x={CX + DOME_R + 4} y={HORIZON_Y + 4} textAnchor="start" fontSize="11" fill="#64748b" fontWeight="600">W</text>
+            <text x={CX} y={HORIZON_Y - DOME_R - 6} textAnchor="middle" fontSize="11" fill="#64748b" fontWeight="600">S</text>
 
-          {sky && (
-            <>
-              {/* Sun path for today */}
-              {sky.arc.length > 1 && (
-                <polyline
-                  points={pointsToPolyline(sky.arc)}
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="1.25"
-                  strokeOpacity="0.45"
-                  strokeDasharray="2 3"
-                />
-              )}
+            {/* Sunrise glyph at East, sunset glyph at West (endpoint markers) */}
+            <HorizonSun x={CX - DOME_R + 12} color="#f59e0b" />
+            <HorizonSun x={CX + DOME_R - 12} color="#f97316" />
 
-              {/* Panel commanded direction: needle from the dome centre to a diamond tip */}
-              {panelTip && (
-                <g>
-                  <line
-                    x1={CX}
-                    y1={HORIZON_Y}
-                    x2={panelTip.x}
-                    y2={panelTip.y}
-                    stroke="#3b82f6"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
+            {sky && (
+              <>
+                {/* Sun path for today */}
+                {sky.arc.length > 1 && (
+                  <polyline
+                    points={pointsToPolyline(sky.arc)}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="1.25"
+                    strokeOpacity="0.45"
+                    strokeDasharray="2 3"
                   />
-                  <g transform={`translate(${panelTip.x}, ${panelTip.y}) rotate(45)`}>
-                    <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
-                    <rect x="-2" y="-2" width="4" height="4" fill="#ffffff" rx="0.5" />
-                  </g>
-                  <circle cx={CX} cy={HORIZON_Y} r="3" fill="#3b82f6" />
-                </g>
-              )}
+                )}
 
-              {/* Real sun position now */}
-              {sunPx && (
-                <>
+                {/* Panel commanded direction: needle from the dome centre to a diamond tip */}
+                {panelTip && (
+                  <g>
+                    <line x1={CX} y1={HORIZON_Y} x2={panelTip.x} y2={panelTip.y} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+                    <g transform={`translate(${panelTip.x}, ${panelTip.y}) rotate(45)`}>
+                      <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
+                      <rect x="-2" y="-2" width="4" height="4" fill="#ffffff" rx="0.5" />
+                    </g>
+                    <circle cx={CX} cy={HORIZON_Y} r="3" fill="#3b82f6" />
+                  </g>
+                )}
+
+                {/* Real sun position now (glyph only — no text label) */}
+                {sunPx && (
                   <g filter="url(#sun-glow)">
                     <circle cx={sunPx.x} cy={sunPx.y} r="7" fill="#fbbf24" />
                     <circle cx={sunPx.x} cy={sunPx.y} r="3.5" fill="#f59e0b" />
                   </g>
-                  <text
-                    x={sunPx.x + (sunPx.x > CX ? -10 : 10)}
-                    y={sunPx.y - 9}
-                    textAnchor={sunPx.x > CX ? "end" : "start"}
-                    fontSize="9"
-                    fontWeight="600"
-                    fill="#b45309"
-                  >
-                    Sun (now)
-                  </text>
-                </>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
           </svg>
+
+          {/* Off-arc badge: sun is up but north of the panel's reachable E–W range */}
+          {offArcBadge && (
+            <div
+              className={`absolute bottom-2 ${offArcSide === "E" ? "left-2" : "right-2"} rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800`}
+            >
+              {offArcBadge}
+            </div>
+          )}
         </div>
 
-        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
-          <Stat label="Sun azimuth" value={sunUp ? `${Math.round(sky!.sun.azimuth)}°` : "—"} />
-          <Stat label="Sun elevation" value={sunUp ? `${Math.round(sky!.sun.elevation)}°` : "Below horizon"} />
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1 text-xs">
+          <Stat label="Sun azimuth" value={sunAzimuth != null ? `${Math.round(sunAzimuth)}°` : "—"} />
+          <Stat label="Sun elevation" value={sunAltitude != null ? `${Math.round(sunAltitude)}°` : "Below horizon"} />
           <Stat label="Daylight" value={sunStatus} />
-          <Stat
-            label="Panel offset"
-            value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"}
-          />
+          <Stat label="Azimuth offset" value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"} />
         </div>
-
-        <p className="mt-2 text-[10px] leading-snug text-[#94a3b8]">
-          Estimated panel azimuth = horizontal_angle + 90° (0°=E / 90°=S / 180°=W). HOME (servo 90°) aims at true South.
-        </p>
       </CardContent>
     </Card>
   );

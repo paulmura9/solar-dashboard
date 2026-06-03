@@ -10,9 +10,9 @@ export default function ElevationView({ elevationAngle }: ElevationViewProps) {
   const tilt = elevationAngle - 90;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1">
       <p className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Elevation</p>
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex items-center justify-center">
       <svg
         width="300"
         height="230"
