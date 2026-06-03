@@ -26,7 +26,7 @@ interface SunTrackerCardProps {
 
 // SVG geometry: a 2:1 half-dome. The semicircle is centred on the horizon line.
 const VIEW_W = 400;
-const VIEW_H = 210;
+const VIEW_H = 196; // semicircle (R=150) + tight padding above S and below the E/W baseline
 const CX = 200;
 const HORIZON_Y = 180;
 const DOME_R = 150;
@@ -202,7 +202,7 @@ export default function SunTrackerCard({
           </div>
         </div>
 
-        <div className="relative w-full">
+        <div className="relative mx-auto w-full max-w-sm">
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             className="block w-full h-auto"
