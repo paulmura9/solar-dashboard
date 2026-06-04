@@ -1,6 +1,5 @@
 import type { FC } from "react";
-import WbCloudy from "@mui/icons-material/WbCloudy";
-import { Clock, Sunrise, Sunset } from "lucide-react";
+import { Clock, Sun, Sunrise, Sunset } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSunTime } from "@/lib/solar/weather";
 import type { WeatherData } from "@/lib/types";
@@ -40,8 +39,8 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xs font-semibold text-[#64748b] uppercase tracking-wider">
-          <WbCloudy style={{ fontSize: 14, color: "#3b82f6" }} />
-          Weather
+          <Sun size={14} className="text-amber-500" />
+          Solar conditions
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -55,6 +54,12 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
                 </span>
                 <span className="text-xs font-mono font-medium text-[#1e293b]">
                   {formatSunTime(data.sunrise)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b]">Solar noon</span>
+                <span className="text-xs font-mono font-medium text-[#1e293b]">
+                  {formatSunTime(data.solarNoon)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -73,20 +78,20 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#64748b]">Solar noon</span>
-                <span className="text-xs font-mono font-medium text-[#1e293b]">
-                  {formatSunTime(data.solarNoon)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-xs text-[#64748b]">Daylight</span>
                 <span className="text-xs font-mono font-medium text-[#1e293b]">
                   {formatDaylight(data.sunrise, data.sunset)}
                 </span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b]">Cloud cover</span>
+                <span className="text-xs font-mono font-medium text-[#1e293b]">
+                  {Math.round(data.cloudCover)}%
+                </span>
+              </div>
             </>
           ) : (
-            ["Sunrise", "Sunset", "Peak hours", "Solar noon", "Daylight"].map((lbl) => (
+            ["Sunrise", "Solar noon", "Sunset", "Peak hours", "Daylight", "Cloud cover"].map((lbl) => (
               <div key={lbl} className="flex items-center justify-between">
                 <span className="text-xs text-[#64748b]">{lbl}</span>
                 <span className="text-xs font-mono text-[#94a3b8]">—</span>
@@ -94,6 +99,10 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
             ))
           )}
         </div>
+
+        <p className="text-[10px] leading-snug text-[#94a3b8]">
+          At solar noon the sun is due South — the reference moment for aligning the panel base.
+        </p>
 
         {data && (
           <div className="flex items-center gap-1 text-[10px] text-[#c0cad8]">

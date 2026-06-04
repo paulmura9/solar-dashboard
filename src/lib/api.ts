@@ -221,6 +221,7 @@ export async function getSunToday(): Promise<WeatherData | null> {
       sunrise,
       sunset,
       solarNoon:     computeSolarNoon(sunrise, sunset),
+      cloudCover:    cur.cloud_cover,
     };
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.error("getSunToday:", err); // dev: surfaces Open-Meteo upstream issues
