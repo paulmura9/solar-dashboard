@@ -1,8 +1,9 @@
 import type { FC } from "react";
 import { Navigation, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatAngle } from "@/lib/solar/energy";
-import { dirtColor } from "@/lib/solar/status";
+import { PREDICTED_CLASS_BADGE } from "@/lib/ui/statusBadgeStyle";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { PanelMode, PanelStatusData, VisionResult } from "@/lib/types";
 
@@ -82,13 +83,14 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision, stale =
         </div>
 
         <div className="flex items-center justify-between pt-1 border-t border-[#e2e8f0]">
-          <span className="text-xs text-[#64748b]">Soiling Score</span>
-          <span
-            className="text-xs font-mono font-medium"
-            style={{ color: dirtColor(vision?.dirt_level_percent ?? null) }}
-          >
-            {vision?.dirt_level_percent != null ? `${vision.dirt_level_percent.toFixed(1)}%` : "—"}
-          </span>
+          <span className="text-xs text-[#64748b]">Panel surface</span>
+          {vision?.predicted_class ? (
+            <Badge variant="outline" style={PREDICTED_CLASS_BADGE[vision.predicted_class].style}>
+              {PREDICTED_CLASS_BADGE[vision.predicted_class].label}
+            </Badge>
+          ) : (
+            <span className="text-xs font-mono text-[#94a3b8]">—</span>
+          )}
         </div>
         {stale && <LastUpdatedStamp secondsAgo={secondsAgo} />}
       </CardContent>
