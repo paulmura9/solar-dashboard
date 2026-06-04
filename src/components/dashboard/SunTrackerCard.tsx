@@ -34,6 +34,8 @@ const HORIZON_Y = 180;
 const DOME_R = 150;
 const ELEVATION_GUIDES = [30, 60]; // degrees, drawn as faint reference curves
 const REFRESH_MS = 60_000;
+// Panel reads as "tracking the sun" when its azimuth offset is within this many degrees.
+const ALIGNED_OFFSET_DEG = 10;
 const { minAngle: H_MIN, maxAngle: H_MAX } = SOLAR_CONFIG.panel;
 
 /** Project a sky point into SVG pixel coordinates within the dome. */
@@ -130,6 +132,9 @@ export default function SunTrackerCard({
       ? panelNeedleTip(panelAzimuth, panelElevation)
       : null;
 
+  // Aligned when the sun is up and the already-computed tracking offset is within threshold.
+  const aligned = sunUp && sky?.offset != null && sky.offset <= ALIGNED_OFFSET_DEG;
+
   // Sun marker. The arc only spans cardinal azimuth [90, 270]; when the real sun is
   // north of E/W (azimuth < 90 or > 270) the panel can't reach it, so we pin the marker
   // to the nearest endpoint and flag it with an off-arc badge instead of silently clamping.
@@ -142,11 +147,11 @@ export default function SunTrackerCard({
       sunPx = toPixels(sky!.sun);
     } else if (az < 90) {
       sunPx = { x: CX - DOME_R, y: HORIZON_Y };
-      offArcBadge = `off-arc · +${Math.round(90 - az)}° N of E`;
+      offArcBadge = "Sun outside panel range";
       offArcSide = "E";
     } else {
       sunPx = { x: CX + DOME_R, y: HORIZON_Y };
-      offArcBadge = `off-arc · +${Math.round(az - 270)}° N of W`;
+      offArcBadge = "Sun outside panel range";
       offArcSide = "W";
     }
   }
@@ -166,7 +171,15 @@ export default function SunTrackerCard({
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-semibold text-[#1e293b] flex items-center justify-between">
-          <span>Sky View — Sun Tracker</span>
+          <span className="flex items-center gap-2">
+            <span>Sky View — Sun Tracker</span>
+            {aligned && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+                Tracking the sun
+              </span>
+            )}
+          </span>
           <span className="flex items-center gap-3 text-xs font-normal text-[#64748b]">
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full bg-[#f59e0b]" />
@@ -269,6 +282,7 @@ export default function SunTrackerCard({
                 {/* Panel commanded direction: needle from the dome centre to a diamond tip */}
                 {panelTip && (
                   <g>
+                    {aligned && <circle cx={panelTip.x} cy={panelTip.y} r="11" fill="#22c55e" opacity="0.18" />}
                     <line x1={CX} y1={HORIZON_Y} x2={panelTip.x} y2={panelTip.y} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
                     <g transform={`translate(${panelTip.x}, ${panelTip.y}) rotate(45)`}>
                       <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
@@ -292,7 +306,7 @@ export default function SunTrackerCard({
           {/* Off-arc badge: sun is up but north of the panel's reachable E–W range */}
           {offArcBadge && (
             <div
-              className={`absolute bottom-2 ${offArcSide === "E" ? "left-2" : "right-2"} rounded border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800`}
+              className={`absolute bottom-2 ${offArcSide === "E" ? "left-2" : "right-2"} rounded-full border border-[#e2e8f0] bg-[#f1f5f9] px-2 py-0.5 text-[10px] text-[#64748b]`}
             >
               {offArcBadge}
             </div>
@@ -304,17 +318,13 @@ export default function SunTrackerCard({
           the whole base until the panel faces true South.
         </p>
 
-        <div className="mt-3 grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
-          <Stat
-            label="Sun position"
-            value={
-              sunAzimuth != null
-                ? `${Math.round(sunAzimuth)}° az · ${Math.round(sunAltitude!)}° alt`
-                : "Below horizon"
-            }
-          />
+        <div className="mt-3 flex justify-center gap-16 text-xs">
           <Stat label="Daylight" value={sunStatus} />
-          <Stat label="Tracking offset" value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"} />
+          <Stat
+            label="Tracking offset"
+            value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"}
+            valueClassName={aligned ? "text-[#22c55e]" : undefined}
+          />
         </div>
       </CardContent>
     </Card>
@@ -347,11 +357,19 @@ function HorizonSun({ x, color }: { x: number; color: string }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  valueClassName = "text-[#1e293b]",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
     <div className="flex flex-col">
       <span className="text-[#94a3b8] uppercase tracking-wider text-[10px]">{label}</span>
-      <span className="font-mono font-semibold text-[#1e293b]">{value}</span>
+      <span className={`font-mono font-semibold ${valueClassName}`}>{value}</span>
     </div>
   );
 }
