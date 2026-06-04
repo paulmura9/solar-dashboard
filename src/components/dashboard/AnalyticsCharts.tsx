@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnalyticsSeries } from "@/lib/charts/transformReadings";
-import { TOOLTIP_STYLE } from "@/lib/charts/chartStyles";
+import { TOOLTIP_STYLE, formatChartValue } from "@/lib/charts/chartStyles";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 
 const CHART_H = 300;
@@ -16,7 +16,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
   return (
     <div className="space-y-5">
       <Card>
-        <CardHeader><CardTitle className="text-sm font-semibold text-[#1e293b]">Power: gross vs net (W)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm font-semibold text-[#1e293b]">Solar Power (W)</CardTitle></CardHeader>
         <CardContent>
           <div style={{ width: "100%", height: CHART_H }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -29,20 +29,20 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" W" width={48} />
-                <Tooltip {...TOOLTIP_STYLE} />
+                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " W")} width={64} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatChartValue(v as number, " W")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
                 {/* Same W axis on purpose: the vertical gap between the gross area and the net
                     line reads directly as system self-consumption. Net is a crisp line (not a
                     second opaque area) so it stays legible even when it sits well below gross. */}
-                <Area type="monotone" dataKey="solar"    name="Panel output (gross)" stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="charging" name="Into battery (net)"   stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="solar"    name="Solar panel output"      stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="charging" name="Stored in battery (net)" stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
           <p className="mt-2 text-[10px] text-[#64748b] leading-relaxed">
-            Gap between the two lines is the system&apos;s own consumption (gross − net). Net into battery
-            can read 0 W / Idle when the battery is full or the load matches charging — that is expected, not a gap in data.
+            The gap between the two lines is the system&apos;s own consumption. Stored power can read 0 W
+            when the battery is full or the load matches charging — expected, not missing data.
           </p>
         </CardContent>
       </Card>
@@ -55,8 +55,8 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
               <LineChart data={series.voltage}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" V" width={48} domain={[6, 9]} />
-                <Tooltip {...TOOLTIP_STYLE} />
+                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " V")} width={64} domain={[6, 9]} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatChartValue(v as number, " V")} />
                 <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -73,7 +73,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[SOLAR_CONFIG.panel.minAngle, SOLAR_CONFIG.panel.maxAngle]} />
-                <Tooltip {...TOOLTIP_STYLE} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatChartValue(v as number, "°")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
                 <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
                 <Line type="monotone" dataKey="elevation" name="Commanded vertical angle"   stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="4 2" isAnimationActive={false} />
@@ -92,7 +92,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit=" Wh" width={56} />
-                <Tooltip {...TOOLTIP_STYLE} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatChartValue(v as number, " Wh")} />
                 <Bar dataKey="wh" name="Energy" fill="#3b82f6" radius={[3, 3, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
