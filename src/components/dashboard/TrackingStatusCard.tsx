@@ -85,7 +85,11 @@ const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision, stale =
         <div className="flex items-center justify-between pt-1 border-t border-[#e2e8f0]">
           <span className="text-xs text-[#64748b]">Panel surface</span>
           {vision?.predicted_class ? (
-            <Badge variant="outline" style={PREDICTED_CLASS_BADGE[vision.predicted_class].style}>
+            <Badge
+              variant="outline"
+              className="h-auto rounded px-1.5 py-0.5 text-[10px] font-bold"
+              style={PREDICTED_CLASS_BADGE[vision.predicted_class].style}
+            >
               {PREDICTED_CLASS_BADGE[vision.predicted_class].label}
             </Badge>
           ) : (
