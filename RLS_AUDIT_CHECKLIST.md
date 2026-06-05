@@ -29,8 +29,7 @@ The Pi gateway uses `service_role` which bypasses RLS entirely. Therefore, RLS p
 | UPDATE | DENY | DENY | ALLOW (bypasses RLS) |
 | DELETE | DENY | DENY | ALLOW (bypasses RLS) |
 
-**Rationale:** Only the Pi inserts readings. Dashboard users read them.
-
+**Rationale:** Only the Pi inserts readings. Dashboard users read them
 ### `vision_results`
 
 | Operation | `anon` | `authenticated` | `service_role` |
