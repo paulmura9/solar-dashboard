@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { AlertTriangle } from "lucide-react";
+import { formatDuration } from "@/lib/utils";
 
 interface StaleDataBannerProps {
   isStale: boolean;
@@ -9,9 +10,8 @@ interface StaleDataBannerProps {
 }
 
 function formatAge(seconds: number): string {
-  if (seconds >= 86_400) return `${Math.round(seconds / 3_600)} hours`;
-  if (seconds >= 3_600) return `${Math.round(seconds / 60)} minutes`;
-  return `${seconds} seconds`;
+  if (seconds < 60) return `${seconds} seconds`;
+  return formatDuration(Math.floor(seconds / 60));
 }
 
 const StaleDataBanner: FC<StaleDataBannerProps> = ({
