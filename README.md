@@ -1,53 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LightTrack Dashboard
 
-## Getting Started
+This is the web dashboard for LightTrack, a dual-axis solar tracking system with
+camera-based dirt detection. It is the frontend part of my bachelor's thesis project.
+The dashboard shows live and historical data from the panel, lets the user send manual
+positioning commands, and displays the results of the dirt detection runs.
 
-First, run the development server:
+## Tech stack
 
-```bash
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui (Radix-based components)
+- SWR for data fetching and caching
+- Recharts for the charts
+- Supabase for authentication, realtime, and storage
+
+## How it talks to the rest of the system
+
+The hardware data path is:
+
+ESP32 -> Raspberry Pi gateway -> Express backend (solar-api) -> dashboard
+
+The dashboard does not talk to the hardware directly. It reads telemetry, history,
+and vision results from the Express backend over a REST API, and receives live updates
+(telemetry, device status, command acknowledgements, vision results) over a WebSocket
+connection to the same backend. Supabase is used separately for user authentication,
+realtime, and for the storage bucket that holds the captured panel images.
+
+## Features
+
+- Live telemetry cards: solar production, battery, and charging status
+- Light sensor (LDR) readings and sun tracking status
+- Historical charts for telemetry over time
+- Manual panel control to send azimuth/elevation commands
+- Dirt detection results with the captured surface image and a confidence value
+- Device status for the ESP32, Raspberry Pi, camera, and MQTT broker
+- Email and password authentication, including password reset
+
+## Running locally
+
+Install dependencies:
+
+```
+npm install
+```
+
+Create a `.env.local` file (you can copy `.env.example`) and set the following
+environment variables. Values are omitted here.
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_API_URL
+NEXT_PUBLIC_WS_URL
+NEXT_PUBLIC_CAMERA_STREAM_URL
+NEXT_PUBLIC_LOCATION_LAT
+NEXT_PUBLIC_LOCATION_LON
+```
+
+`NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` point at the Express backend (REST and
+WebSocket). `NEXT_PUBLIC_CAMERA_STREAM_URL` is the MJPEG stream served by the Raspberry
+Pi and is only reachable on the same local network. `NEXT_PUBLIC_LOCATION_LAT` and
+`NEXT_PUBLIC_LOCATION_LON` are the installation coordinates used for the weather and sun
+position calculations; if they are missing the app falls back to a default location.
+
+Start the development server:
+
+```
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at http://localhost:3000.
 
-## Required environment variables
+## Deployment
 
-Copy `.env.example` to `.env.local` for local development, and set the same
-values in the Vercel project settings for deployment. The command flow and
-live updates will not work unless both of the following are present:
-
-```
-NEXT_PUBLIC_API_URL=https://solar-api-production-da12.up.railway.app
-NEXT_PUBLIC_WS_URL=wss://solar-api-production-da12.up.railway.app/ws/client
-```
-
-`NEXT_PUBLIC_API_URL` is the Express REST backend (commands and history).
-`NEXT_PUBLIC_WS_URL` is the WebSocket endpoint that pushes telemetry and
-command status updates; if it is missing the dashboard still loads but the
-command table never transitions past PENDING in real time, and a warning is
-logged to the browser console at startup.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The dashboard is deployed on Vercel.
