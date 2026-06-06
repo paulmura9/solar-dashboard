@@ -49,3 +49,7 @@ SKILL.md
 error.txt
 *.tmp
 /screenshots
+
+# internal audit / working documents
+AUDIT*.md
+*_AUDIT*.md
