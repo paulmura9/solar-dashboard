@@ -207,10 +207,10 @@ export async function getSunToday(): Promise<WeatherData | null> {
       `&current=cloud_cover,weather_code` +
       `&daily=sunrise,sunset` +
       `&timezone=${encodeURIComponent(timezone)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
     const json = await res.json() as {
-      current: { cloud_cover: number; weather_code: number };
+      current: { time: string; cloud_cover: number; weather_code: number };
       daily:   { sunrise: string[]; sunset: string[] };
     };
     const cur     = json.current;
@@ -222,6 +222,7 @@ export async function getSunToday(): Promise<WeatherData | null> {
       sunset,
       solarNoon:     computeSolarNoon(sunrise, sunset),
       cloudCover:    cur.cloud_cover,
+      observedAt:    cur.time,
     };
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.error("getSunToday:", err); // dev: surfaces Open-Meteo upstream issues

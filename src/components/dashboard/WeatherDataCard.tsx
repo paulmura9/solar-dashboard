@@ -103,9 +103,7 @@ const WeatherDataCard: FC<WeatherDataCardProps> = ({ data }) => {
         {data && (
           <div className="flex items-center gap-1 text-[10px] text-[#c0cad8]">
             <Clock size={9} />
-            <span>
-              Updated {new Date().toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
-            </span>
+            <span>Updated {formatSunTime(data.observedAt)}</span>
           </div>
         )}
       </CardContent>

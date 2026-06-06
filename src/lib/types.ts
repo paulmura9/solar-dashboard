@@ -106,6 +106,7 @@ export interface WeatherData {
   sunset: string;
   solarNoon: string;
   cloudCover: number;
+  observedAt: string;
 }
 
 export interface PanelStatusData {
