@@ -52,4 +52,7 @@ error.txt
 
 # internal audit / working documents
 AUDIT*.md
-*_AUDIT*.md
+FRONTEND_PROJECT_BRIEF.md
+FRONTEND_SECURITY_AUDIT.md
+RLS_AUDIT_CHECKLIST.md
+RLS_RECOMMENDED_POLICIES.sql
