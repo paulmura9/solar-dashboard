@@ -144,7 +144,7 @@ export async function createCommand(
   const res = await apiFetch<ApiResponse<RawJson>>(
     "/api/commands",
     token,
-    { method: "POST", body: JSON.stringify(command) }
+    { method: "POST", body: JSON.stringify({ ...command, device_id: SOLAR_CONFIG.device.id }) }
   );
   if (!res.ok) return { success: false, error: res.error };
 
@@ -170,7 +170,7 @@ export async function requestCameraCapture(token: string): Promise<CaptureReques
   const res = await apiFetch<ApiResponse<RawJson>>(
     "/api/commands",
     token,
-    { method: "POST", body: JSON.stringify({ command_type: "CAPTURE_IMAGE", payload: {} }) }
+    { method: "POST", body: JSON.stringify({ command_type: "CAPTURE_IMAGE", payload: {}, device_id: SOLAR_CONFIG.device.id }) }
   );
   if (!res.ok) return { success: false, error: res.error };
 

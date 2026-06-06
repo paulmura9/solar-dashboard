@@ -19,6 +19,10 @@ const locationLat = rawLat != null && !isNaN(parsedLat) ? parsedLat : FALLBACK_L
 const locationLon = rawLon != null && !isNaN(parsedLon) ? parsedLon : FALLBACK_LON;
 
 export const SOLAR_CONFIG = {
+  device: {
+    // Single tracked device; the backend labels all rows with this device_id.
+    id: "esp32-solar-01",
+  },
   ldr: {
     maxValue: 4095,
     nightThreshold: 100,
