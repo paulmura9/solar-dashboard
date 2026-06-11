@@ -79,7 +79,6 @@ export function usePanelCommands(token: string | null): PanelCommandsReturn {
         payload,
         status: result.status,
         error_message: null,
-        ack_payload: {},
         created_at: nowIso,
         sent_at: result.status === "SENT" ? nowIso : null,
         acknowledged_at: null,

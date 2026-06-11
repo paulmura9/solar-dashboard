@@ -106,7 +106,6 @@ export function mapCommand(d: unknown): DeviceCommand {
     payload:         (o.payload ?? {}) as Record<string, unknown>,
     status:          o.status as DeviceCommand["status"],
     error_message:   pick<string | null>(o, "errorMessage", "error_message"),
-    ack_payload:     (pick(o, "ackPayload", "ack_payload") ?? {}) as Record<string, unknown>,
     created_at:      pick<string>(o, "createdAt", "created_at"),
     sent_at:         pick<string | null>(o, "sentAt", "sent_at"),
     acknowledged_at: pick<string | null>(o, "acknowledgedAt", "acknowledged_at"),
@@ -119,7 +118,7 @@ export function mapCapture(d: unknown): CameraCapture {
     id:         o.id as number,
     command_id: pick<string | null>(o, "commandId", "command_id"),
     image_path: pick<string | null>(o, "imagePath", "image_path"),
-    timestamp:  o.timestamp as string,
+    timestamp:  pick<string>(o, "capturedAt", "captured_at"),
     created_at: pick<string>(o, "createdAt", "created_at"),
   };
 }

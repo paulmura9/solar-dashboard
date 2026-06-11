@@ -43,6 +43,8 @@ function fmt(value: number | null | undefined, decimals = 1): string {
 
 const QUALITY_REASON_LABEL: Record<string, string> = {
   too_dark: "Image too dark",
+  too_bright: "Image too bright",
+  not_panel: "Panel not in view",
   low_detail: "Camera may be covered",
 };
 

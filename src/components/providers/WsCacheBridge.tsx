@@ -25,7 +25,7 @@ export function WsCacheBridge(): null {
     const offs = [
       client.on<unknown>("telemetry_update", (raw) => applyTelemetryUpdate(mutate, raw)),
       client.on<unknown>("vision_update", (raw) => applyVisionUpdate(mutate, raw)),
-      client.on<unknown>("event_notification", (raw) => applyEventUpdate(mutate, raw)),
+      client.on<unknown>("event", (raw) => applyEventUpdate(mutate, raw)),
       client.on<unknown>("device_status_update", (raw) => applyDeviceUpdate(mutate, raw)),
       client.on<unknown>("command_status_update", (raw) =>
         applyCommandStatusUpdate(mutate, raw)

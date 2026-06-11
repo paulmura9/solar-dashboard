@@ -70,8 +70,9 @@ export const SOLAR_CONFIG = {
     timezone: "Europe/Bucharest",
   },
   panel: {
-    minAngle: 0,
-    maxAngle: 180,
+    // Servo travel limits enforced by firmware and API (5-175, not full 0-180).
+    minAngle: 5,
+    maxAngle: 175,
     stepAngle: 5,
     peakPowerW: 4.2,
     daylightHoursDefault: 6.0,

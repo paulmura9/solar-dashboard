@@ -80,7 +80,6 @@ export interface DeviceCommand {
   payload: Record<string, unknown>;
   status: CommandStatus;
   error_message: string | null;
-  ack_payload: Record<string, unknown>;
   created_at: string;
   sent_at: string | null;
   acknowledged_at: string | null;
