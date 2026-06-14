@@ -182,6 +182,10 @@ export default function ControlPage() {
             onDirection={(dir) => { void handleDirection(dir); }}
             onSetMode={handleSetMode}
             onReset={() => { void resetPosition(); }}
+            lightDiffs={{
+              horizontal: latest?.horizontal_light_difference ?? null,
+              vertical:   latest?.vertical_light_difference ?? null,
+            }}
           />
 
           <Card>

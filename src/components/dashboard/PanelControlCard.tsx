@@ -3,6 +3,8 @@ import { AlertTriangle, Check, RotateCcw, Sliders } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DPad from "./DPad";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
+import { formatHorizontalDiff, formatVerticalDiff } from "@/lib/solar/lightState";
 import type { CommandDirection, CommandType, TrackingMode } from "@/lib/types";
 
 interface PanelControlCardProps {
@@ -14,6 +16,7 @@ interface PanelControlCardProps {
   onDirection: (dir: CommandDirection) => void;
   onSetMode: (mode: TrackingMode) => void;
   onReset: () => void;
+  lightDiffs?: { horizontal: number | null; vertical: number | null };
 }
 
 const MODES: { mode: TrackingMode; label: string }[] = [
@@ -31,12 +34,21 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
   onDirection,
   onSetMode,
   onReset,
+  lightDiffs,
 }) => {
   const isManual = currentMode === "MANUAL";
   const hardwareDisabled = !esp32Online || isStale;
   const dpadDisabled = hardwareDisabled || !isManual;
   const modeDisabled = hardwareDisabled || sending;
   const resetDisabled = hardwareDisabled || sending || isCommandCooldown("RESET_POSITION");
+
+  // Both light diffs sitting inside the firmware deadband = the panel is aligned. A null
+  // diff is unknown, not balanced, so it never satisfies this.
+  const hDiff = lightDiffs?.horizontal ?? null;
+  const vDiff = lightDiffs?.vertical ?? null;
+  const band = SOLAR_CONFIG.ldr.diffNeutralBand;
+  const isBalanced =
+    hDiff != null && vDiff != null && Math.abs(hDiff) < band && Math.abs(vDiff) < band;
 
   return (
     <Card>
@@ -77,6 +89,31 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
           <div className={!isManual ? "opacity-40 pointer-events-none" : ""}>
             <DPad onDirection={onDirection} disabled={dpadDisabled} />
           </div>
+
+          {isManual && !isStale && (
+            <div className="mt-3">
+              <div className="flex min-h-[18px] items-center justify-center">
+                {isBalanced ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                    <Check size={10} />
+                    Balanced
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-x-4 text-[10px] tabular-nums">
+                    <span className="flex items-center gap-1">
+                      <span className="uppercase tracking-wider text-[#94a3b8]">H diff</span>
+                      <span className="font-mono font-medium text-[#1e293b]">{formatHorizontalDiff(hDiff)}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="uppercase tracking-wider text-[#94a3b8]">V diff</span>
+                      <span className="font-mono font-medium text-[#1e293b]">{formatVerticalDiff(vDiff)}</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-center text-[10px] text-[#94a3b8]">Move toward the arrow to balance</p>
+            </div>
+          )}
         </div>
 
         <div>
