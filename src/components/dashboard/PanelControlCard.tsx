@@ -3,8 +3,7 @@ import { AlertTriangle, Check, RotateCcw, Sliders } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DPad from "./DPad";
-import { SOLAR_CONFIG } from "@/config/solarConfig";
-import { formatHorizontalDiff, formatVerticalDiff } from "@/lib/solar/lightState";
+import { formatHorizontalDiff, formatVerticalDiff, isOnSun } from "@/lib/solar/lightState";
 import type { CommandDirection, CommandType, TrackingMode } from "@/lib/types";
 
 interface PanelControlCardProps {
@@ -42,13 +41,10 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
   const modeDisabled = hardwareDisabled || sending;
   const resetDisabled = hardwareDisabled || sending || isCommandCooldown("RESET_POSITION");
 
-  // Both light diffs sitting inside the firmware deadband = the panel is aligned. A null
-  // diff is unknown, not balanced, so it never satisfies this.
+  // Both light diffs inside the firmware neutral band = the panel is on the sun.
   const hDiff = lightDiffs?.horizontal ?? null;
   const vDiff = lightDiffs?.vertical ?? null;
-  const band = SOLAR_CONFIG.ldr.diffNeutralBand;
-  const isBalanced =
-    hDiff != null && vDiff != null && Math.abs(hDiff) < band && Math.abs(vDiff) < band;
+  const isBalanced = isOnSun(hDiff, vDiff);
 
   return (
     <Card>

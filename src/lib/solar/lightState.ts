@@ -50,6 +50,20 @@ export function computeLightState(
 }
 
 /**
+ * The panel is "on the sun" when BOTH light differences sit inside the firmware neutral
+ * band — the tracker has nothing left to correct on either axis. A null diff is unknown,
+ * not balanced, so it never satisfies this. Callers must gate this behind the light state
+ * (only when NORMAL): near-zero LDRs at night/low-light make both diffs meaningless noise
+ * that would otherwise read as a false "on sun".
+ */
+export function isOnSun(hDiff: number | null, vDiff: number | null): boolean {
+  const band = SOLAR_CONFIG.ldr.diffNeutralBand;
+  return (
+    hDiff != null && vDiff != null && Math.abs(hDiff) < band && Math.abs(vDiff) < band
+  );
+}
+
+/**
  * The panel reads UNBALANCED when either light difference skews well past the balance
  * deadband (> 3x it, ~31% of the maximum possible |diff|) — a clearly one-sided light
  * bias the tracker is still correcting. Smaller diffs are normal tracking noise and show

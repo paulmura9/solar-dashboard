@@ -15,6 +15,9 @@ import { SOLAR_CONFIG } from "@/config/solarConfig";
 import { useApiToken } from "@/hooks/useApiToken";
 import { usePanelCommands } from "@/hooks/usePanelCommands";
 import { useStaleTelemetry } from "@/hooks/useStaleTelemetry";
+import { usePanelStatus } from "@/hooks/usePanelStatus";
+import { useWeatherData } from "@/hooks/useWeatherData";
+import { computeLightState } from "@/lib/solar/lightState";
 import { useLatestReading } from "@/hooks/api/useLatestReading";
 import { useDevices } from "@/hooks/api/useDevices";
 import { useCommands } from "@/hooks/api/useCommands";
@@ -63,11 +66,21 @@ export default function ControlPage() {
   const { sending, lastResult, movePanel, setMode, resetPosition, startTracking, stopTracking, isCommandCooldown } =
     usePanelCommands(token);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
+  const panelStatus = usePanelStatus(latest ?? null);
+  const weatherData = useWeatherData();
 
   if (latestInitial && devicesInitial) return <ControlSkeleton />;
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
   const currentMode = latest?.tracking_mode ?? null;
+  // Same light-state interpretation as the dashboard; gates the Sky View balance guidance.
+  const lightState = computeLightState(
+    currentMode,
+    panelStatus?.lightSensors ?? null,
+    weatherData,
+    new Date(),
+    isStale
+  );
   const hAngle = latest?.horizontal_angle ?? 90;
   const vAngle = latest?.vertical_angle ?? 90;
   const targetReached = !!(
@@ -167,6 +180,11 @@ export default function ControlPage() {
             panelElevation={latest?.vertical_angle ?? null}
             latitude={SOLAR_CONFIG.weather.locationLat}
             longitude={SOLAR_CONFIG.weather.locationLon}
+            lightState={lightState}
+            lightDiffs={{
+              horizontal: latest?.horizontal_light_difference ?? null,
+              vertical:   latest?.vertical_light_difference ?? null,
+            }}
           />
         </ErrorBoundary>
       )}

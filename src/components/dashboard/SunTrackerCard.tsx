@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import {
@@ -14,6 +15,8 @@ import {
   projectToDome,
   type SkyPoint,
 } from "@/lib/solar/sunPosition";
+import { formatHorizontalDiff, formatVerticalDiff, isOnSun } from "@/lib/solar/lightState";
+import type { LightState } from "@/lib/types";
 
 interface SunTrackerCardProps {
   /** latest.horizontal_angle (raw azimuth servo, 0..180), or null when unavailable. */
@@ -22,6 +25,10 @@ interface SunTrackerCardProps {
   panelElevation: number | null;
   latitude: number;
   longitude: number;
+  /** Latest LDR balance errors, same telemetry that feeds PanelControlCard. */
+  lightDiffs?: { horizontal: number | null; vertical: number | null };
+  /** Display light state (computeLightState); guidance only shows when NORMAL. */
+  lightState?: LightState;
 }
 
 // SVG geometry: a 2:1 half-dome. The semicircle is centred on the horizon line.
@@ -102,6 +109,8 @@ export default function SunTrackerCard({
   panelElevation,
   latitude,
   longitude,
+  lightDiffs,
+  lightState,
 }: SunTrackerCardProps) {
   // Bucket changes on mount and once per minute; null on the server.
   const bucket = useSyncExternalStore(subscribeClock, clockBucket, serverClock);
@@ -132,8 +141,18 @@ export default function SunTrackerCard({
       ? panelNeedleTip(panelAzimuth, panelElevation)
       : null;
 
-  // Aligned when the sun is up and the already-computed tracking offset is within threshold.
+  // Aligned when the sun is up and the already-computed tracking offset is within
+  // threshold. This is AZIMUTH-only (the dome geometry) — true "on sun" needs both axes
+  // and is decided by isOnSun below.
   const aligned = sunUp && sky?.offset != null && sky.offset <= ALIGNED_OFFSET_DEG;
+
+  // LDR balance guidance under the dome. Only meaningful when the sun is actually up and
+  // the LDRs see enough light (NORMAL): NIGHT/LOW_LIGHT/stale telemetry all leave
+  // lightState != NORMAL, so shaded near-zero readings never read as a false "on sun".
+  const hDiff = lightDiffs?.horizontal ?? null;
+  const vDiff = lightDiffs?.vertical ?? null;
+  const showGuidance = sunUp && lightState === "NORMAL";
+  const onSun = isOnSun(hDiff, vDiff);
 
   // Sun marker. The arc only spans cardinal azimuth [90, 270]; when the real sun is
   // north of E/W (azimuth < 90 or > 270) the panel can't reach it, so we pin the marker
@@ -176,7 +195,7 @@ export default function SunTrackerCard({
             {aligned && (
               <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                Tracking the sun
+                Azimuth aligned
               </span>
             )}
           </span>
@@ -312,6 +331,28 @@ export default function SunTrackerCard({
             </div>
           )}
         </div>
+
+        {showGuidance && (
+          <div className="mt-3 flex min-h-[20px] items-center justify-center">
+            {onSun ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                <Check size={11} />
+                On sun
+              </span>
+            ) : (
+              <div className="flex items-center gap-x-4 text-[11px] tabular-nums">
+                <span className="flex items-center gap-1">
+                  <span className="uppercase tracking-wider text-[#94a3b8]">Azimuth</span>
+                  <span className="font-mono font-medium text-[#1e293b]">{formatHorizontalDiff(hDiff)}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="uppercase tracking-wider text-[#94a3b8]">Elevation</span>
+                  <span className="font-mono font-medium text-[#1e293b]">{formatVerticalDiff(vDiff)}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <p className="mt-3 text-[10px] leading-snug text-[#94a3b8]">
           Calibration: press Reset Position to center the panel (90°/90°), then physically rotate
