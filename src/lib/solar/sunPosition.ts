@@ -125,3 +125,24 @@ export function projectToDome(point: SkyPoint): { x: number; y: number } {
     y: Math.sin(el),
   };
 }
+
+/**
+ * Elevation of the panel's normal direction (0..90°) from the raw elevation
+ * servo angle, HOME (90°) aiming at the zenith. Mirrors the firmware geometry.
+ */
+export function panelNormalElevation(verticalAngle: number): number {
+  return Math.max(0, 90 - Math.abs(verticalAngle - 90));
+}
+
+/**
+ * Great-circle angle (degrees) between two sky directions — the true pointing
+ * error. 0° only when the panel normal points exactly at the sun, so it combines
+ * azimuth AND elevation rather than azimuth alone.
+ */
+export function angularSeparation(a: SkyPoint, b: SkyPoint): number {
+  const el1 = a.elevation * DEG_TO_RAD;
+  const el2 = b.elevation * DEG_TO_RAD;
+  const dAz = (a.azimuth - b.azimuth) * DEG_TO_RAD;
+  const cos = Math.sin(el1) * Math.sin(el2) + Math.cos(el1) * Math.cos(el2) * Math.cos(dAz);
+  return Math.acos(Math.min(1, Math.max(-1, cos))) * RAD_TO_DEG;
+}

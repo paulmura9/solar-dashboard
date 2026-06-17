@@ -3,7 +3,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SOLAR_CONFIG } from "@/config/solarConfig";
 import {
   sunPositionAt,
   sunTimesAt,
@@ -11,7 +10,8 @@ import {
   panelBearing,
   panelAlignment,
   compass8,
-  azimuthDelta,
+  panelNormalElevation,
+  angularSeparation,
   projectToDome,
   type SkyPoint,
 } from "@/lib/solar/sunPosition";
@@ -43,26 +43,11 @@ const ELEVATION_GUIDES = [30, 60]; // degrees, drawn as faint reference curves
 const REFRESH_MS = 60_000;
 // Panel reads as "tracking the sun" when its azimuth offset is within this many degrees.
 const ALIGNED_OFFSET_DEG = 10;
-const { minAngle: H_MIN, maxAngle: H_MAX } = SOLAR_CONFIG.panel;
 
 /** Project a sky point into SVG pixel coordinates within the dome. */
 function toPixels(point: SkyPoint): { x: number; y: number } {
   const { x, y } = projectToDome(point);
   return { x: CX + x * DOME_R, y: HORIZON_Y - y * DOME_R };
-}
-
-/**
- * Panel marker tip on the E–S–W dome: horizontal_angle sets the angle along the arc
- * (servo − 90°, so H_MIN → E/left, 90° → S/top, H_MAX → W/right) and the elevation
- * servo sets the radius (90° → full radius on the arc, 0°/180° → the horizon centre).
- * Always lands inside the semicircle, anchored at the centre baseline.
- */
-function panelNeedleTip(horizontalAngle: number, verticalAngle: number): { x: number; y: number } {
-  const clampedH = Math.min(H_MAX, Math.max(H_MIN, horizontalAngle));
-  const elevation = Math.max(0, 90 - Math.abs(verticalAngle - 90)); // panel-normal elevation, 0..90
-  const radius = (elevation / 90) * DOME_R;
-  const angle = ((clampedH - 90) * Math.PI) / 180;
-  return { x: CX + radius * Math.sin(angle), y: HORIZON_Y - radius * Math.cos(angle) };
 }
 
 function pointsToPolyline(points: SkyPoint[]): string {
@@ -121,13 +106,8 @@ export default function SunTrackerCard({
     const times = sunTimesAt(now, latitude, longitude);
     const sun = sunPositionAt(now, latitude, longitude);
     const arc = sunArc(latitude, longitude, times);
-    // AZIMUTH OFFSET (point 7): plain cardinal-azimuth delta wrapped to [0, 180].
-    const offset =
-      panelAzimuth != null && sun.elevation > 0
-        ? azimuthDelta(panelBearing(panelAzimuth), sun.azimuth)
-        : null;
-    return { times, sun, arc, offset };
-  }, [now, latitude, longitude, panelAzimuth]);
+    return { times, sun, arc };
+  }, [now, latitude, longitude]);
 
   const sunUp = sky != null && sky.sun.elevation > 0;
   const sunAzimuth = sunUp ? sky!.sun.azimuth : null;
@@ -136,15 +116,20 @@ export default function SunTrackerCard({
   const panelCardinalAz = panelAzimuth != null ? panelBearing(panelAzimuth) : null;
   const align = panelAzimuth != null ? panelAlignment(panelAzimuth) : null;
 
-  const panelTip =
-    panelAzimuth != null && panelElevation != null
-      ? panelNeedleTip(panelAzimuth, panelElevation)
+  // Panel normal as a sky point, same convention as the sun, so it projects with
+  // the same map — overlap on the dome means the panel really points at the sun.
+  const panelSky: SkyPoint | null =
+    panelCardinalAz != null && panelElevation != null
+      ? { azimuth: panelCardinalAz, elevation: panelNormalElevation(panelElevation) }
       : null;
+  const panelEl = panelSky?.elevation ?? null;
 
-  // Aligned when the sun is up and the already-computed tracking offset is within
-  // threshold. This is AZIMUTH-only (the dome geometry) — true "on sun" needs both axes
-  // and is decided by isOnSun below.
-  const aligned = sunUp && sky?.offset != null && sky.offset <= ALIGNED_OFFSET_DEG;
+  // True pointing error (azimuth + elevation), drives the aligned state.
+  const pointingError =
+    sunUp && panelSky != null ? angularSeparation(panelSky, sky!.sun) : null;
+  const aligned = pointingError != null && pointingError <= ALIGNED_OFFSET_DEG;
+
+  const panelTip = panelSky != null ? toPixels(panelSky) : null;
 
   // LDR balance guidance under the dome. Only meaningful when the sun is actually up and
   // the LDRs see enough light (NORMAL): NIGHT/LOW_LIGHT/stale telemetry all leave
@@ -195,7 +180,7 @@ export default function SunTrackerCard({
             {aligned && (
               <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                Azimuth aligned
+                Aligned
               </span>
             )}
           </span>
@@ -220,6 +205,7 @@ export default function SunTrackerCard({
             {align && <span className="text-[#64748b]">{"  "}({align.label})</span>}
             <span className="block text-[11px] text-[#94a3b8]">
               servo {panelAzimuth != null ? `${Math.round(panelAzimuth)}°` : "—"}
+              {panelEl != null ? ` · elev ${Math.round(panelEl)}°` : ""}
             </span>
           </div>
           <div>
@@ -302,9 +288,9 @@ export default function SunTrackerCard({
                 {panelTip && (
                   <g>
                     {aligned && <circle cx={panelTip.x} cy={panelTip.y} r="11" fill="#22c55e" opacity="0.18" />}
-                    <line x1={CX} y1={HORIZON_Y} x2={panelTip.x} y2={panelTip.y} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1={CX} y1={HORIZON_Y} x2={panelTip.x} y2={panelTip.y} stroke={aligned ? "#22c55e" : "#3b82f6"} strokeWidth="2.5" strokeLinecap="round" />
                     <g transform={`translate(${panelTip.x}, ${panelTip.y}) rotate(45)`}>
-                      <rect x="-5" y="-5" width="10" height="10" fill="#3b82f6" rx="1.5" />
+                      <rect x="-5" y="-5" width="10" height="10" fill={aligned ? "#22c55e" : "#3b82f6"} rx="1.5" />
                       <rect x="-2" y="-2" width="4" height="4" fill="#ffffff" rx="0.5" />
                     </g>
                     <circle cx={CX} cy={HORIZON_Y} r="3" fill="#3b82f6" />
@@ -362,8 +348,8 @@ export default function SunTrackerCard({
         <div className="mt-3 flex justify-center gap-16 text-xs">
           <Stat label="Daylight" value={sunStatus} />
           <Stat
-            label="Tracking offset"
-            value={sky?.offset != null ? `${Math.round(sky.offset)}°` : "—"}
+            label="Pointing error"
+            value={pointingError != null ? `${Math.round(pointingError)}°` : "—"}
             valueClassName={aligned ? "text-[#22c55e]" : undefined}
           />
         </div>
