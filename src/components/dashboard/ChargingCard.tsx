@@ -5,7 +5,7 @@ import { Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatPower, formatWh, formatCurrentMa, siToMilli } from "@/lib/solar/energy";
-import { useSmoothed } from "@/lib/hooks/useSmoothed";
+import { useStableValue } from "@/lib/hooks/useStableValue";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading } from "@/lib/types";
@@ -19,8 +19,8 @@ interface ChargingCardProps {
 const ChargingCard: FC<ChargingCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
   // Charging figures are NET (INA219 on the battery: charge minus load), not gross
   // panel/MPPT output. Show an idle state rather than a fabricated number when not charging.
-  const smPower = useSmoothed(r?.charging_power ?? null, 0.25);
-  const smCurrent = useSmoothed(r?.charging_current ?? null, 0.25);
+  const smPower = useStableValue(r?.charging_power ?? null, { jump: 0.05, floor: 0.05, persist: 3 });
+  const smCurrent = useStableValue(r?.charging_current ?? null, { jump: 0.05, floor: 0.005, persist: 3 });
   const chargePower = smPower;
   const isCharging = chargePower != null && chargePower > 0;
   const chargeRate = chargePower == null ? "—" : isCharging ? formatPower(chargePower) : "Idle";

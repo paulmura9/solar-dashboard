@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage } from "@/lib/solar/energy";
-import { useSmoothed } from "@/lib/hooks/useSmoothed";
+import { useStableValue } from "@/lib/hooks/useStableValue";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
@@ -68,8 +68,8 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
 }
 
 const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
-  const smPercent = useSmoothed(r?.battery_percent ?? null, 0.15);
-  const smVoltage = useSmoothed(r?.battery_voltage ?? null, 0.2);
+  const smPercent = useStableValue(r?.battery_percent ?? null, { jump: 0.05, floor: 3, persist: 3 });
+  const smVoltage = useStableValue(r?.battery_voltage ?? null, { jump: 0.05, floor: 0.04, persist: 3 });
   // Rounded so the estimated percent stays put instead of jittering per second.
   const pct = clampPercent(smPercent != null ? Math.round(smPercent) : null);
   const status = r?.battery_status ?? null;
