@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage } from "@/lib/solar/energy";
+import { useSmoothed } from "@/lib/hooks/useSmoothed";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
@@ -67,7 +68,10 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
 }
 
 const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
-  const pct = clampPercent(r?.battery_percent ?? null);
+  const smPercent = useSmoothed(r?.battery_percent ?? null, 0.15);
+  const smVoltage = useSmoothed(r?.battery_voltage ?? null, 0.2);
+  // Rounded so the estimated percent stays put instead of jittering per second.
+  const pct = clampPercent(smPercent != null ? Math.round(smPercent) : null);
   const status = r?.battery_status ?? null;
   const color = getBatteryColor(pct);
   const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? DEFAULT_STATUS_STYLE;
@@ -107,7 +111,7 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
           />
         </div>
         <div>
-          <MetricRow label="Voltage" value={formatVoltage(r?.battery_voltage ?? null)} />
+          <MetricRow label="Voltage" value={formatVoltage(smVoltage)} />
           <MetricRow
             label="Status"
             value={status ? (
