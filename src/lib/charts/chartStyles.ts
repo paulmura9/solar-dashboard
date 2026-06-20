@@ -43,12 +43,3 @@ export function formatAxisLabel(ms: number): string {
     hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 }
-
-// Shared crosshair behaviour for every time-series tooltip: a dashed vertical cursor that
-// tracks the pointer across the whole plot, no fade animation, and freedom to overflow the
-// chart vertically so the box is never clipped at the top/bottom edge.
-export const TIME_TOOLTIP_PROPS = {
-  cursor: { stroke: "#94a3b8", strokeWidth: 1, strokeDasharray: "4 3" },
-  isAnimationActive: false,
-  allowEscapeViewBox: { x: false, y: true },
-} as const;
