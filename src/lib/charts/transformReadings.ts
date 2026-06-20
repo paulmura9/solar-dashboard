@@ -3,6 +3,7 @@ import { downsample } from "@/lib/solar/chart";
 import { PERF_CONFIG } from "@/config/perfConfig";
 
 export interface DashboardChartPoint {
+  ts: number;
   time: string;
   solar: number;
   voltage: number;
@@ -12,17 +13,20 @@ export interface DashboardChartPoint {
 }
 
 export interface AnalyticsPowerPoint {
+  ts: number;
   time: string;
   solar: number;
   charging: number;
 }
 
 export interface AnalyticsVoltagePoint {
+  ts: number;
   time: string;
   voltage: number;
 }
 
 export interface AnalyticsAnglesPoint {
+  ts: number;
   time: string;
   azimuth: number;
   elevation: number;
@@ -60,7 +64,8 @@ export function transformDashboardChart(
   bucketSize: number
 ): DashboardChartPoint[] {
   const downsampled = downsample(readings, bucketSize);
-  return downsampled.map((r) => ({
+  const points = downsampled.map((r) => ({
+    ts: new Date(r.timestamp).getTime(),
     time: toTime(r.timestamp),
     solar: Number(r.solar_power) || 0,
     voltage: Number(r.battery_voltage) || 0,
@@ -68,6 +73,8 @@ export function transformDashboardChart(
     elevation: r.vertical_angle,
     charging: Number(r.charging_power) || 0,
   }));
+  points.sort((a, b) => a.ts - b.ts);
+  return points;
 }
 
 export interface AnalyticsSeries {
@@ -87,31 +94,42 @@ export function transformAnalyticsCharts(
   const labelFor = hours >= 48 ? toDate : toTime;
 
   const power: AnalyticsPowerPoint[] = sampled.map((r) => ({
+    ts: new Date(r.timestamp).getTime(),
     time: labelFor(r.timestamp),
     solar: Number(r.solar_power) || 0,
     charging: Number(r.charging_power) || 0,
   }));
+  power.sort((a, b) => a.ts - b.ts);
 
   const voltage: AnalyticsVoltagePoint[] = sampled.map((r) => ({
+    ts: new Date(r.timestamp).getTime(),
     time: labelFor(r.timestamp),
     voltage: Number(r.battery_voltage) || 0,
   }));
+  voltage.sort((a, b) => a.ts - b.ts);
 
   const angles: AnalyticsAnglesPoint[] = sampled.map((r) => ({
+    ts: new Date(r.timestamp).getTime(),
     time: labelFor(r.timestamp),
     azimuth: r.horizontal_angle,
     elevation: r.vertical_angle,
   }));
+  angles.sort((a, b) => a.ts - b.ts);
 
-  const energyByDay = readings.reduce<Record<string, number>>((acc, r) => {
-    const day = toDate(r.timestamp);
-    acc[day] = Math.max(acc[day] ?? 0, r.solar_energy_today_wh ?? 0);
+  // Bucket energy by calendar day. Key on a sortable yyyy-mm-dd string so the bars come
+  // out chronological (Object key order alone is not guaranteed across months); keep the
+  // ro-RO "DD.MM" label for display.
+  const energyByDay = readings.reduce<Record<string, { wh: number; label: string }>>((acc, r) => {
+    const d = new Date(r.timestamp);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const wh = r.solar_energy_today_wh ?? 0;
+    if (acc[key]) acc[key].wh = Math.max(acc[key].wh, wh);
+    else acc[key] = { wh, label: toDate(r.timestamp) };
     return acc;
   }, {});
-  const energy: AnalyticsEnergyPoint[] = Object.entries(energyByDay).map(([date, wh]) => ({
-    date,
-    wh,
-  }));
+  const energy: AnalyticsEnergyPoint[] = Object.keys(energyByDay)
+    .sort()
+    .map((key) => ({ date: energyByDay[key].label, wh: energyByDay[key].wh }));
 
   return { power, voltage, angles, energy };
 }

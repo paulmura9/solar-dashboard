@@ -42,6 +42,8 @@ const OFFLINE_PLACEHOLDER_DEVICES: DeviceStatus[] = [
   { id: -3, device_name: "CAMERA",       is_online: false, last_seen: null, firmware_version: null, status_message: null, updated_at: "" },
 ];
 
+const HISTORY_HOURS = 24;
+
 const SEVERITY_BADGE: Record<Severity, React.CSSProperties> = {
   INFO:     {},
   WARNING:  { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
@@ -56,7 +58,7 @@ function parseSubsystem(eventType: string): string {
 
 export default function OverviewPage() {
   const { data: latest, isInitialLoad: latestInitial } = useLatestReading();
-  const { data: history } = useReadingsHistory({ hours: 24 });
+  const { data: history } = useReadingsHistory({ hours: HISTORY_HOURS });
   const { data: events } = useEvents(PERF_CONFIG.cache.eventsCap);
   const { data: devices, isInitialLoad: devicesInitial } = useDevices();
   const { data: vision } = useLatestVision();
@@ -191,7 +193,7 @@ export default function OverviewPage() {
       </ErrorBoundary>
 
       <ErrorBoundary>
-        <DashboardCharts data={chartData} />
+        <DashboardCharts data={chartData} hours={HISTORY_HOURS} />
       </ErrorBoundary>
     </div>
   );
