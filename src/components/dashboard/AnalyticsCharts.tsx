@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnalyticsSeries } from "@/lib/charts/transformReadings";
-import { TOOLTIP_STYLE, formatChartValue, tsSpan, formatAxisTick, formatAxisLabel } from "@/lib/charts/chartStyles";
+import { TOOLTIP_STYLE, TIME_TOOLTIP_PROPS, formatChartValue, tsSpan, formatAxisTick, formatAxisLabel } from "@/lib/charts/chartStyles";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 
 const CHART_H = 300;
@@ -22,7 +22,7 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
         <CardContent>
           <div style={{ width: "100%", height: CHART_H }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={series.power}>
+              <ComposedChart data={series.power} syncId="analytics-time" syncMethod="value">
                 <defs>
                   <linearGradient id="solarGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.2} />
@@ -32,13 +32,13 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " W")} width={64} />
-                <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " W")} />
+                <Tooltip {...TOOLTIP_STYLE} {...TIME_TOOLTIP_PROPS} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " W")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
                 {/* Same W axis on purpose: the vertical gap between the gross area and the net
                     line reads directly as system self-consumption. Net is a crisp line (not a
                     second opaque area) so it stays legible even when it sits well below gross. */}
-                <Area type="monotone" dataKey="solar"    name="Solar panel output"      stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="charging" name="Stored in battery (net)" stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="solar"    name="Solar panel output"      stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="charging" name="Stored in battery (net)" stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -54,12 +54,12 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
         <CardContent>
           <div style={{ width: "100%", height: CHART_H }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={series.voltage}>
+              <LineChart data={series.voltage} syncId="analytics-time" syncMethod="value">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " V")} width={64} domain={[6, 9]} />
-                <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " V")} />
-                <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
+                <Tooltip {...TOOLTIP_STYLE} {...TIME_TOOLTIP_PROPS} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " V")} />
+                <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -71,14 +71,14 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
         <CardContent>
           <div style={{ width: "100%", height: CHART_H }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={series.angles}>
+              <LineChart data={series.angles} syncId="analytics-time" syncMethod="value">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[SOLAR_CONFIG.panel.minAngle, SOLAR_CONFIG.panel.maxAngle]} />
-                <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, "°")} />
+                <Tooltip {...TOOLTIP_STYLE} {...TIME_TOOLTIP_PROPS} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, "°")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
-                <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="elevation" name="Commanded vertical angle"   stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="4 2" isAnimationActive={false} />
+                <Line type="monotone" dataKey="azimuth"   name="Commanded horizontal angle" stroke="#f59e0b" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="elevation" name="Commanded vertical angle"   stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="4 2" connectNulls isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -35,9 +35,20 @@ export function formatAxisTick(ms: number, spanMs: number): string {
   return date;
 }
 
-// Tooltip header: always the full moment, regardless of how the axis tick is abbreviated.
+// Tooltip header: always the full moment (to the second), regardless of how the axis tick is
+// abbreviated — the crosshair can land between ticks, so the exact instant matters.
 export function formatAxisLabel(ms: number): string {
   return new Date(ms).toLocaleString("ro-RO", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 }
+
+// Shared crosshair behaviour for every time-series tooltip: a dashed vertical cursor that
+// tracks the pointer across the whole plot, no fade animation, and freedom to overflow the
+// chart vertically so the box is never clipped at the top/bottom edge.
+export const TIME_TOOLTIP_PROPS = {
+  cursor: { stroke: "#94a3b8", strokeWidth: 1, strokeDasharray: "4 3" },
+  isAnimationActive: false,
+  allowEscapeViewBox: { x: false, y: true },
+} as const;
