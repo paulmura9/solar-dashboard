@@ -7,13 +7,14 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnalyticsSeries } from "@/lib/charts/transformReadings";
-import { TOOLTIP_STYLE, formatChartValue, timeAxisDomain, formatAxisTick, formatAxisLabel } from "@/lib/charts/chartStyles";
+import { TOOLTIP_STYLE, formatChartValue, tsSpan, formatAxisTick, formatAxisLabel } from "@/lib/charts/chartStyles";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 
 const CHART_H = 300;
 
-function AnalyticsChartsBase({ series, hours }: { series: AnalyticsSeries; hours: number }) {
-  const domain = timeAxisDomain(hours);
+function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
+  // power/voltage/angles share the same timestamps; one span drives every time axis.
+  const span = tsSpan(series.power);
   return (
     <div className="space-y-5">
       <Card>
@@ -29,7 +30,7 @@ function AnalyticsChartsBase({ series, hours }: { series: AnalyticsSeries; hours
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="ts" type="number" scale="time" domain={domain} tickFormatter={(ms) => formatAxisTick(ms as number, hours)} tickCount={6} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " W")} width={64} />
                 <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " W")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
@@ -55,7 +56,7 @@ function AnalyticsChartsBase({ series, hours }: { series: AnalyticsSeries; hours
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series.voltage}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="ts" type="number" scale="time" domain={domain} tickFormatter={(ms) => formatAxisTick(ms as number, hours)} tickCount={6} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " V")} width={64} domain={[6, 9]} />
                 <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, " V")} />
                 <Line type="monotone" dataKey="voltage" name="Battery Voltage" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -72,7 +73,7 @@ function AnalyticsChartsBase({ series, hours }: { series: AnalyticsSeries; hours
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series.angles}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="ts" type="number" scale="time" domain={domain} tickFormatter={(ms) => formatAxisTick(ms as number, hours)} tickCount={6} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} unit="°" width={48} domain={[SOLAR_CONFIG.panel.minAngle, SOLAR_CONFIG.panel.maxAngle]} />
                 <Tooltip {...TOOLTIP_STYLE} labelFormatter={(ms) => formatAxisLabel(ms as number)} formatter={(v) => formatChartValue(v as number, "°")} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />

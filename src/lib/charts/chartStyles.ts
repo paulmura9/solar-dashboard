@@ -15,23 +15,23 @@ export function formatChartValue(value: number | string, unit: string): string {
 
 const HOUR_MS = 3_600_000;
 
-// Numeric [start, end] domain for a time-series XAxis: the full selected window ending now.
-// Anchoring to the window (not the data) keeps the scale consistent and renders data gaps as
-// real gaps instead of compressing them.
-export function timeAxisDomain(hours: number): [number, number] {
-  const endMs = Date.now();
-  return [endMs - hours * HOUR_MS, endMs];
+// Time span (ms) covered by a sorted-ascending series, used to pick the tick granularity.
+// The XAxis domain is ['dataMin','dataMax'], so the axis fits the data, not the selected
+// window — the tick format follows the same actual extent.
+export function tsSpan(points: ReadonlyArray<{ ts: number }>): number {
+  if (points.length === 0) return 0;
+  return points[points.length - 1].ts - points[0].ts;
 }
 
-// Axis tick label, granularity scaled to the window: hour-of-day for short ranges, day+hour
-// for multi-day, day-only for a week. Let scale="time" + tickCount space the ticks; this only
-// formats them, so no duplicate labels appear.
-export function formatAxisTick(ms: number, hours: number): string {
+// Axis tick label, granularity scaled to the displayed data span: hour-of-day when it fits a
+// day, day+hour for a few days, day-only beyond that. Let scale="time" + tickCount space the
+// ticks; this only formats them, so no duplicate labels appear.
+export function formatAxisTick(ms: number, spanMs: number): string {
   const d = new Date(ms);
   const time = d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
-  if (hours <= 24) return time;
+  if (spanMs <= 24 * HOUR_MS) return time;
   const date = d.toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit" });
-  if (hours <= 72) return `${date} ${time}`;
+  if (spanMs <= 72 * HOUR_MS) return `${date} ${time}`;
   return date;
 }
 

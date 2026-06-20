@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {isInitialLoad ? <AnalyticsSkeleton /> : <AnalyticsCharts series={series} hours={hours} />}
+        {isInitialLoad ? <AnalyticsSkeleton /> : <AnalyticsCharts series={series} />}
       </div>
     </ErrorBoundary>
   );
