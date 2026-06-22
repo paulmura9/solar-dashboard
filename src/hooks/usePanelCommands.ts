@@ -9,7 +9,7 @@ import type { CommandType, CommandDirection, DeviceCommand, TrackingMode } from 
 
 const COOLDOWN_COMMANDS = new Set<CommandType>(["RESET_POSITION"]);
 const COOLDOWN_MS = 2_000;
-const MOVE_THROTTLE_MS = 200; // 5 commands/second per direction
+const MOVE_THROTTLE_MS = 200;
 const COMMAND_HISTORY_CAP = 50;
 
 function insertOptimisticCommand(row: DeviceCommand): void {

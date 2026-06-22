@@ -19,14 +19,14 @@ export function useStableValue(
       const limit = Math.max(floor, Math.abs(cur) * jump);
       if (Math.abs(value - cur) <= limit) {
         cand.current = null;
-        return cur + alpha * (value - cur);          // small change: smooth
+        return cur + alpha * (value - cur);
       }
       if (cand.current && Math.abs(value - cand.current.v) <= limit) {
-        if (++cand.current.n >= persist) { cand.current = null; return value; } // confirmed
+        if (++cand.current.n >= persist) { cand.current = null; return value; }
       } else {
         cand.current = { v: value, n: 1 };
       }
-      return cur;                                     // big jump: hold until it persists
+      return cur;
     });
   }, [value, jump, floor, persist, alpha]);
 

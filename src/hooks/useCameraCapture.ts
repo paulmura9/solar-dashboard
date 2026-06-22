@@ -7,14 +7,8 @@ import { useDashboardWS } from "@/components/providers/DashboardWSProvider";
 import { apiKeys, type CameraCapture } from "@/types/api";
 import type { CommandStatusUpdate } from "@/lib/ws/types";
 
-// Mirrors the post-command cooldown used by usePanelCommands (RESET_POSITION):
-// a brief lockout so the gateway isn't hammered with back-to-back captures.
 const CAPTURE_COOLDOWN_MS = 2_000;
-// No confirmation within this window is treated as a failed capture so the UI
-// never hangs in the "Capturing..." state. Matches the backend POST timeout.
 const CAPTURE_TIMEOUT_MS = 15_000;
-// Reconciliation cadence: re-fetch the latest capture while awaiting the result,
-// so completion is detected even if the WS ack never arrives.
 const RECONCILE_INTERVAL_MS = 2_000;
 
 export type CapturePhase = "idle" | "capturing" | "cooldown" | "error";
@@ -31,8 +25,6 @@ export interface CameraCaptureResult {
   capture: () => Promise<void>;
 }
 
-// Stable identity for a capture row, independent of the id column's type.
-// Used to detect "a new capture row appeared" when the API doesn't echo command_id.
 function captureIdentity(cap: CameraCapture | null): string | null {
   if (!cap) return null;
   if (cap.command_id) return cap.command_id;
@@ -79,8 +71,6 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     };
   }, [stopListening]);
 
-  // Keep the SWR latest-capture cache in sync too, so a remount/refresh shows the
-  // new row. Display itself is driven by `capturedRow` (cache-bypassing).
   const refreshDisplay = useCallback(() => {
     void mutate(apiKeys.latestCapture);
   }, [mutate]);
@@ -108,8 +98,6 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     setPhase("error");
   }, [stopListening]);
 
-  // Resolve success with the exact fresh row that completion produced, so the
-  // displayed image is the just-taken capture — never the stale cached one.
   const resolveWithRow = useCallback((cap: CameraCapture) => {
     if (resolvedRef.current) return;
     resolvedRef.current = true;
@@ -138,9 +126,6 @@ export function useCameraCapture(token: string): CameraCaptureResult {
     }
     const commandId = result.commandId;
 
-    // (1) Live path — when Express pushes this command's status over the shared
-    // /ws/client connection. On ACK, fetch the fresh row for this command so we
-    // display the just-taken image; if the row lags, the poll below catches it.
     if (client) {
       wsUnsubRef.current = client.on<CommandStatusUpdate>("command_status_update", (update) => {
         if (update.id !== commandId) return;
@@ -154,25 +139,19 @@ export function useCameraCapture(token: string): CameraCaptureResult {
       });
     }
 
-    // (3) Arm the timeout immediately so a slow baseline fetch can't leave the
-    // UI hanging. Only fires if neither path confirms in the window.
     timeoutRef.current = setTimeout(
       () => finishFailure("Capture timed out — no response from gateway"),
       CAPTURE_TIMEOUT_MS
     );
 
-    // Baseline: the latest capture identity BEFORE this command completes, so the
-    // poll can detect a brand-new row even when the API omits command_id.
     const baseline = await getLatestCapture(token);
-    if (resolvedRef.current) return; // WS may have resolved during the fetch
+    if (resolvedRef.current) return;
     if (baseline && baseline.command_id === commandId) {
       resolveWithRow(baseline);
       return;
     }
     const baselineIdentity = captureIdentity(baseline);
 
-    // (2) Reconciliation path — cache-free poll. Resolve with the row for this
-    // command_id, or with a new capture row that supersedes the baseline.
     pollRef.current = setInterval(() => {
       void getLatestCapture(token).then((cap) => {
         if (!cap) return;

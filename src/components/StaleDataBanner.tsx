@@ -25,8 +25,6 @@ const StaleDataBanner: FC<StaleDataBannerProps> = ({
   const age =
     secondsSinceLastReading != null ? formatAge(secondsSinceLastReading) : "an unknown amount of time";
 
-  // The gateway (Pi) is what relays ESP32 telemetry. If we can see that the ESP32 is
-  // offline while the gateway is still online, name the ESP32 instead of blaming the gateway.
   const cause =
     esp32Online === false && gatewayOnline === true
       ? "No telemetry from ESP32."

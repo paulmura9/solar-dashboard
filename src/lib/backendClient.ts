@@ -6,7 +6,7 @@ export type ApiResult<T> =
   | { ok: false; error: string; status: number };
 
 function devWarn(message: string, ...rest: unknown[]): void {
-  if (process.env.NODE_ENV === "development") console.warn(message, ...rest); // dev: fetch-failure diagnostics
+  if (process.env.NODE_ENV === "development") console.warn(message, ...rest);
 }
 
 async function parseErrorMessage(res: Response): Promise<string> {
@@ -14,7 +14,6 @@ async function parseErrorMessage(res: Response): Promise<string> {
     const body = (await res.json()) as { error?: unknown };
     if (body && typeof body.error === "string") return body.error;
   } catch {
-    // body was not JSON — fall through to the status line
   }
   return `${res.status} ${res.statusText}`;
 }

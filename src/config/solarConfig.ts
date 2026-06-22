@@ -8,10 +8,10 @@ const parsedLon = rawLon != null ? parseFloat(rawLon) : NaN;
 
 if (process.env.NODE_ENV === "development") {
   if (rawLat == null || isNaN(parsedLat)) {
-    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LAT is missing or invalid, using fallback ${FALLBACK_LAT}`); // dev: optional env warning
+    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LAT is missing or invalid, using fallback ${FALLBACK_LAT}`);
   }
   if (rawLon == null || isNaN(parsedLon)) {
-    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LON is missing or invalid, using fallback ${FALLBACK_LON}`); // dev: optional env warning
+    console.warn(`solarConfig: NEXT_PUBLIC_LOCATION_LON is missing or invalid, using fallback ${FALLBACK_LON}`);
   }
 }
 
@@ -20,35 +20,21 @@ const locationLon = rawLon != null && !isNaN(parsedLon) ? parsedLon : FALLBACK_L
 
 export const SOLAR_CONFIG = {
   device: {
-    // Single tracked device; the backend labels all rows with this device_id.
     id: "esp32-solar-01",
   },
   ldr: {
     maxValue: 4095,
     nightThreshold: 100,
-    // Per-sensor low-light threshold for the daytime LOW_LIGHT light-state indicator: a
-    // majority of sensors reading below this counts as low light. Tune after LDR calibration.
     lowLightThreshold: 500,
-    // |H/V diff| balance tolerance (raw ADC, ~10% of max |diff| = 2*4095). A diff stays
-    // unremarkable within this band; the UNBALANCED badge only trips past 3x it (~31%), so
-    // small-to-medium tracking skew shows no badge and only a clearly large skew surfaces.
     balanceDeadband: 850,
-    // |H/V diff| below this is treated as balanced noise (matches firmware LDR_DEADBAND);
-    // no direction arrow is shown within this band.
     diffNeutralBand: 350,
-    // A sensor reading at least this percent below the mean of the other three is flagged
-    // as a low outlier (one shaded/blocked corner while the rest see light).
     outlierDropPct: 40,
   },
   battery: {
-    // Header icon tiers (estimated charge level → battery glyph).
     fullPercent: 80,
     mediumPercent: 40,
-    // Color tiers for the percent hero number and fill bar.
     goodPercent: 70,
     lowColorPercent: 30,
-    // Low/critical warning thresholds. The warning is derived client-side from
-    // the estimated percent; battery_status no longer carries LOW/CRITICAL.
     warningPercent: 30,
     criticalPercent: 15,
   },
@@ -70,7 +56,6 @@ export const SOLAR_CONFIG = {
     timezone: "Europe/Bucharest",
   },
   panel: {
-    // Servo travel limits enforced by firmware and API (5-175, not full 0-180).
     minAngle: 5,
     maxAngle: 175,
     stepAngle: 5,

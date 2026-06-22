@@ -26,7 +26,6 @@ const ANGLES_SPECS: CrosshairSeries[] = [
 ];
 
 function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
-  // power/voltage/angles share the same timestamps; one span drives every time axis.
   const span = tsSpan(series.power);
   const powerCross = useCrosshair();
   const voltageCross = useCrosshair();
@@ -49,9 +48,6 @@ function AnalyticsChartsBase({ series }: { series: AnalyticsSeries }) {
                 <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(ms) => formatAxisTick(ms as number, span)} tickCount={5} minTickGap={60} tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => formatChartValue(v, " W")} width={64} />
                 <Legend wrapperStyle={{ fontSize: 11, color: "#64748b" }} />
-                {/* Same W axis on purpose: the vertical gap between the gross area and the net
-                    line reads directly as system self-consumption. Net is a crisp line (not a
-                    second opaque area) so it stays legible even when it sits well below gross. */}
                 <Area type="monotone" dataKey="solar"    name="Solar panel output"      stroke="#f59e0b" fill="url(#solarGrad)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                 <Line type="monotone" dataKey="charging" name="Stored in battery (net)" stroke="#3b82f6" fill="none" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                 <ChartCrosshair mouseX={powerCross.mouseX} data={series.power} specs={POWER_SPECS} />

@@ -7,20 +7,6 @@ import type { CommandStatusUpdate } from "@/lib/ws/types";
 
 const REVALIDATE_OFF = { revalidate: false } as const;
 
-// Merge a freshly-mapped reading over the previously cached one, field by field.
-// Rule: keep the previous value whenever the incoming nullable field is null/undefined,
-// so a live telemetry frame that omits a field (or whose sensor is momentarily offline)
-// never wipes a previously-good value to null and blanks its card.
-//
-// Limitation: mapReading() collapses both "field absent from the WS payload" and
-// "field explicitly null in the payload" into null, so the two cannot be told apart
-// here. We deliberately favor showing the last known real value over blanking the UI:
-// an explicit null (e.g. solar_current when the INA219 is offline) will be ignored and
-// the prior value retained. This is acceptable because this merge is a safety net — the
-// backend now sends real values on every frame; it only guards against dropped fields.
-//
-// The seven non-nullable fields (identity + always-present servo/mode state) are taken
-// straight from the incoming frame: the telemetry schema requires them on every frame.
 function mergeReading(prev: SensorReading, next: SensorReading): SensorReading {
   return {
     id:                          next.id,
@@ -144,7 +130,7 @@ function isCommandStatusUpdate(value: unknown): value is CommandStatusUpdate {
 export function applyCommandStatusUpdate(mutate: ScopedMutator, raw: unknown): void {
   if (!isCommandStatusUpdate(raw)) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("[ws] discarded malformed command_status_update", raw); // dev: untrusted inbound payload
+      console.warn("[ws] discarded malformed command_status_update", raw);
     }
     return;
   }

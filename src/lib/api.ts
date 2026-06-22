@@ -152,7 +152,7 @@ export async function createCommand(
   const status = body?.status;
   if (typeof id !== "string" || (status !== "PENDING" && status !== "SENT")) {
     if (process.env.NODE_ENV === "development") {
-      console.warn("createCommand: unexpected response shape", res.data); // dev: contract drift with backend
+      console.warn("createCommand: unexpected response shape", res.data);
     }
     return { success: false, error: "Invalid response" };
   }
@@ -164,8 +164,6 @@ type CaptureRequestResult =
   | { success: false; error: string };
 
 export async function requestCameraCapture(token: string): Promise<CaptureRequestResult> {
-  // A manual capture is just a device command; the backend has no dedicated
-  // /api/camera/capture route. Reuse the generic command endpoint.
   const res = await apiFetch<ApiResponse<RawJson>>(
     "/api/commands",
     token,
@@ -177,16 +175,13 @@ export async function requestCameraCapture(token: string): Promise<CaptureReques
   const id = body ? (body.id ?? body.commandId ?? body.command_id) : undefined;
   if (typeof id !== "string") {
     if (process.env.NODE_ENV === "development") {
-      console.warn("requestCameraCapture: unexpected response shape", res.data); // dev: contract drift with backend
+      console.warn("requestCameraCapture: unexpected response shape", res.data);
     }
     return { success: false, error: "Invalid response" };
   }
   return { success: true, commandId: id };
 }
 
-// Direct, cache-free read of the latest capture. Used by the capture flow's
-// reconciliation poll, where SWR's deduping interval could otherwise return a
-// stale envelope and the freshly-written row would never be observed in time.
 export async function getLatestCapture(token: string): Promise<CameraCapture | null> {
   const res = await apiFetch<ApiResponse<RawJson>>(
     apiKeys.latestCapture,
@@ -224,7 +219,7 @@ export async function getSunToday(): Promise<WeatherData | null> {
       observedAt:    cur.time,
     };
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.error("getSunToday:", err); // dev: surfaces Open-Meteo upstream issues
+    if (process.env.NODE_ENV === "development") console.error("getSunToday:", err);
     return null;
   }
 }
@@ -239,7 +234,7 @@ export async function getSignedImageUrl(path: string): Promise<string | null> {
     .createSignedUrl(path, SOLAR_CONFIG.storage.signedUrlTtlSeconds);
 
   if (error || !data?.signedUrl) {
-    if (process.env.NODE_ENV === "development") console.debug("[storage] No signed URL for path:", path); // dev: non-fatal missing image path
+    if (process.env.NODE_ENV === "development") console.debug("[storage] No signed URL for path:", path);
     return null;
   }
 

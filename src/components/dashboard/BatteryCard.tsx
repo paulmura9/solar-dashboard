@@ -18,7 +18,6 @@ interface BatteryCardProps {
   secondsAgo?: number | null;
 }
 
-// Estimated percent is clamped to the physical 0..100 range before display.
 function clampPercent(pct: number | null): number | null {
   if (pct == null) return null;
   return Math.max(0, Math.min(100, pct));
@@ -33,8 +32,6 @@ function getBatteryColor(pct: number | null): string {
 
 interface StatusStyle { bg: string; color: string; border: string }
 
-// Activity status only (charge/discharge/full/idle). Low/critical is a separate
-// percent-derived warning, not a device status.
 const STATUS_STYLES: Record<BatteryStatus, StatusStyle> = {
   CHARGING:    { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
   DISCHARGING: { bg: "#eff6ff", color: "#1e40af", border: "#bfdbfe" },
@@ -43,12 +40,10 @@ const STATUS_STYLES: Record<BatteryStatus, StatusStyle> = {
   UNKNOWN:     { bg: "#f8fafc", color: "#64748b", border: "#e2e8f0" },
 };
 
-// Fallback for any status value outside the firmware set.
 const DEFAULT_STATUS_STYLE: StatusStyle = STATUS_STYLES.UNKNOWN;
 
 interface BatteryAlert { text: string; bg: string; color: string; border: string }
 
-// Low/critical warning derived from the estimated percent. null → no warning.
 function batteryAlert(pct: number | null): BatteryAlert | null {
   if (pct == null) return null;
   if (pct <= SOLAR_CONFIG.battery.criticalPercent)
@@ -70,7 +65,6 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
 const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
   const smPercent = useStableValue(r?.battery_percent ?? null, { jump: 0.05, floor: 3, persist: 3 });
   const smVoltage = useStableValue(r?.battery_voltage ?? null, { jump: 0.05, floor: 0.04, persist: 3 });
-  // Rounded so the estimated percent stays put instead of jittering per second.
   const pct = clampPercent(smPercent != null ? Math.round(smPercent) : null);
   const status = r?.battery_status ?? null;
   const color = getBatteryColor(pct);

@@ -17,8 +17,6 @@ interface ChargingCardProps {
 }
 
 const ChargingCard: FC<ChargingCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
-  // Charging figures are NET (INA219 on the battery: charge minus load), not gross
-  // panel/MPPT output. Show an idle state rather than a fabricated number when not charging.
   const smPower = useStableValue(r?.charging_power ?? null, { jump: 0.05, floor: 0.05, persist: 3 });
   const smCurrent = useStableValue(r?.charging_current ?? null, { jump: 0.05, floor: 0.005, persist: 3 });
   const chargePower = smPower;

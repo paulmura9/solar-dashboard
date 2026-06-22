@@ -7,16 +7,6 @@ import {
   SIGNOUT_ROUTE,
 } from "@/config/auth";
 
-// signOutCompletely cleans up every layer of a Supabase auth session:
-//   1. Supabase global sign-out (revokes refresh token across devices)
-//   2. localStorage entries with the auth/app prefixes (sb-*, lighttrack-*, lighttrack_*)
-//   3. sessionStorage entries with the same prefixes
-//   4. Non-HttpOnly cookies on document.cookie (best effort, browser-readable only)
-//   5. POST /auth/signout so the server can expire the HttpOnly cookies too
-//   6. Hard window.location.replace to /login?signedout=1, dropping React state
-//      and pushing the browser past any bfcache snapshot of the protected page.
-// Every stage is wrapped so a single failure cannot block the rest; the function
-// is idempotent and safe to call from inactivity timers, button handlers, etc.
 export async function signOutCompletely(): Promise<void> {
   await runSafely("supabase signOut", async () => {
     await getSupabaseBrowserClient().auth.signOut({ scope: "global" });

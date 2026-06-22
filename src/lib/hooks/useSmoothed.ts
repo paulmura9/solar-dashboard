@@ -6,8 +6,6 @@ import { useState } from "react";
 export function useSmoothed(value: number | null, alpha = 0.2): number | null {
   const [s, setS] = useState<number | null>(value);
   const [seen, setSeen] = useState<number | null>(value);
-  // Advance the average during render when a new reading arrives — the canonical
-  // React way to derive state from a changing prop (no effect, no cascading render).
   if (value != null && value !== seen) {
     setSeen(value);
     setS((cur) => (cur == null ? value : cur + alpha * (value - cur)));

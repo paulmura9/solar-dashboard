@@ -116,9 +116,6 @@ export function transformAnalyticsCharts(
   }));
   angles.sort((a, b) => a.ts - b.ts);
 
-  // Bucket energy by calendar day. Key on a sortable yyyy-mm-dd string so the bars come
-  // out chronological (Object key order alone is not guaranteed across months); keep the
-  // ro-RO "DD.MM" label for display.
   const energyByDay = readings.reduce<Record<string, { wh: number; label: string }>>((acc, r) => {
     const d = new Date(r.timestamp);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

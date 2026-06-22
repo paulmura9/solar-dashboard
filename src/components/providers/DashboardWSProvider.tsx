@@ -41,8 +41,6 @@ export function DashboardWSProvider({
 
     const supabase = getSupabaseBrowserClient();
 
-    // NEXT_PUBLIC_WS_URL is host-only; append the client socket path, tolerating
-    // a trailing slash so the result is exactly wss://<host>/ws/client.
     const url = `${wsUrl.replace(/\/+$/, "")}${WS_CLIENT_PATH}`;
 
     return new DashboardWSClient({
@@ -56,7 +54,7 @@ export function DashboardWSProvider({
       },
       onLog: (level, event, data): void => {
         if (process.env.NODE_ENV === "development") {
-          console[level](`[ws] ${event}`, data ?? ""); // dev: WS diagnostic sink, dev-only
+          console[level](`[ws] ${event}`, data ?? "");
         }
       },
     });

@@ -65,9 +65,6 @@ export default function OverviewPage() {
   const panelStatus = usePanelStatus(latest);
   const { isStale, secondsSinceLastReading } = useStaleTelemetry(latest?.timestamp);
 
-  // Frontend light-state interpretation (LDR majority vote + sun times). new Date() is
-  // re-evaluated on the 1s tick from useStaleTelemetry; weather is null until fetched
-  // client-side, so the initial SSR/hydration render is always UNKNOWN (no badge).
   const lightState = computeLightState(
     latest?.tracking_mode ?? null,
     panelStatus?.lightSensors ?? null,
@@ -87,7 +84,6 @@ export default function OverviewPage() {
     .filter((d) => d.device_name !== "MQTT_BROKER");
   const isPlaceholderDevices = devices.length === 0;
 
-  // Only trust real device_status to attribute the staleness; placeholders mean "unknown".
   const esp32Online = isPlaceholderDevices
     ? null
     : devices.find((d) => d.device_name === "ESP32")?.is_online ?? null;

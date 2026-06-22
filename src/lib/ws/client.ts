@@ -53,9 +53,6 @@ export class DashboardWSClient {
 
     const token = await this.config.getToken();
     if (token === null) {
-      // Token may be momentarily null while supabase-js refreshes the session.
-      // Reschedule with backoff instead of bailing, otherwise a transient gap
-      // permanently stalls live updates until the provider remounts (audit H-3).
       this.log("warn", "ws_no_token_deferring_connect");
       this.isConnecting = false;
       this.scheduleReconnect();

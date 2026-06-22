@@ -73,7 +73,6 @@ export default function ControlPage() {
 
   const esp32Online = devices.find((d) => d.device_name === "ESP32")?.is_online ?? false;
   const currentMode = latest?.tracking_mode ?? null;
-  // Same light-state interpretation as the dashboard; gates the Sky View balance guidance.
   const lightState = computeLightState(
     currentMode,
     panelStatus?.lightSensors ?? null,
@@ -142,9 +141,6 @@ export default function ControlPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Titles, illustrations and readouts in one 2-column grid so each row's
-                cells share an exact baseline (both titles align) and each column stays
-                centred over its illustration. */}
             <div className="mx-auto grid max-w-2xl grid-cols-2 items-center gap-x-4 gap-y-3 pt-1 text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-[#64748b]">Elevation</p>
               <p className="text-xs font-bold uppercase tracking-widest text-[#64748b]">Horizontal</p>
@@ -288,7 +284,7 @@ export default function ControlPage() {
                 </TableHeader>
                 <TableBody>
                   {commands.map((cmd, index) => {
-                    const previousCmd = commands[index + 1]; // list is newest-first; previous = older row
+                    const previousCmd = commands[index + 1];
                     return (
                     <TableRow key={cmd.id} className="border-[#e2e8f0] text-xs">
                       <TableCell className="text-[#64748b] tabular-nums" suppressHydrationWarning>

@@ -1,11 +1,6 @@
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import type { LightSensorData, WeatherData, LightState, TrackingMode } from "@/lib/types";
 
-// computeLightState produces the display light-state. NIGHT is taken verbatim from the
-// device (tracking_mode === "NIGHT" — the firmware decides it on-device from NTP time +
-// sunrise/sunset and parks the panel). The frontend only INFERS the LOW_LIGHT case, which
-// the firmware never reports as a mode: daytime low-light from clouds/shade.
-
 /**
  * Decide the display light state.
  *
@@ -25,10 +20,8 @@ export function computeLightState(
   now: Date,
   isStale: boolean
 ): LightState {
-  // 1. Device-reported NIGHT wins outright.
   if (trackingMode === "NIGHT") return "NIGHT";
 
-  // 4. The LOW_LIGHT inference needs fresh LDRs and sun times.
   if (isStale || !light || !weather) return "UNKNOWN";
   const ldrs = [light.topLeft, light.topRight, light.bottomLeft, light.bottomRight];
   if (ldrs.some((v) => v == null)) return "UNKNOWN";
@@ -42,8 +35,6 @@ export function computeLightState(
   const sunsetMs = new Date(weather.sunset).getTime();
   if (Number.isNaN(sunriseMs) || Number.isNaN(sunsetMs)) return "UNKNOWN";
 
-  // 2. Low light during the day = LOW_LIGHT; low light at night without a device NIGHT
-  //    report is left to the device (it will switch to NIGHT itself), so we stay NORMAL.
   const nowMs = now.getTime();
   const isDaytime = nowMs >= sunriseMs && nowMs <= sunsetMs;
   return isDaytime ? "LOW_LIGHT" : "NORMAL";

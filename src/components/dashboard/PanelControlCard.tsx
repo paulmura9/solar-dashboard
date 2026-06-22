@@ -41,7 +41,6 @@ const PanelControlCard: FC<PanelControlCardProps> = ({
   const modeDisabled = hardwareDisabled || sending;
   const resetDisabled = hardwareDisabled || sending || isCommandCooldown("RESET_POSITION");
 
-  // Both light diffs inside the firmware neutral band = the panel is on the sun.
   const hDiff = lightDiffs?.horizontal ?? null;
   const vDiff = lightDiffs?.vertical ?? null;
   const isBalanced = isOnSun(hDiff, vDiff);

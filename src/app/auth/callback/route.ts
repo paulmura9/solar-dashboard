@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error("OAuth callback error:", error.message); // dev: server-side route, writes to Vercel function logs (not browser)
+    console.error("OAuth callback error:", error.message);
     return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 

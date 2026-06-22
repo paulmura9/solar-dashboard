@@ -21,9 +21,6 @@ import { DirtDetectionSkeleton } from "@/components/skeletons/DirtDetectionSkele
 import { STATUS_BADGE_OK, STATUS_BADGE_ERROR, STATUS_BADGE_WARNING, PREDICTED_CLASS_BADGE } from "@/lib/ui/statusBadgeStyle";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Hero number + bar colour, driven by the predicted_class label so it never
-// contradicts the badge. Reuses existing tokens: green/red from dirtColor's
-// palette, amber (#92400e text / #f59e0b bar) from STATUS_BADGE_WARNING / solar-amber.
 const SEVERITY_COLOR: Record<"clean" | "slightly_dirty" | "dirty", { text: string; bar: string }> = {
   clean:          { text: "#22c55e", bar: "#22c55e" },
   slightly_dirty: { text: STATUS_BADGE_WARNING.color as string, bar: "#f59e0b" },
@@ -99,8 +96,6 @@ function ImageLightbox({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80" />
-        {/* Full-viewport flex container bounds the image to the screen on first
-            paint (vw/vh-relative), so it fits without needing a resize/reflow. */}
         <Dialog.Content
           aria-label="Captured image, full screen"
           aria-describedby={undefined}
@@ -154,8 +149,6 @@ export default function DirtDetectionPage() {
   const [showCaptured, setShowCaptured] = useState(false);
   const [flashImage, setFlashImage] = useState(false);
 
-  // A just-completed capture (cache-bypassing, command-matched) supersedes the
-  // SWR-cached latest row, so we never render the previous (stale) capture.
   const displayCapture = capturedRow ?? latestCapture;
 
   useEffect(() => {
@@ -176,11 +169,6 @@ export default function DirtDetectionPage() {
     return () => { cancelled = true; };
   }, [latest?.processed_image_path]);
 
-  // Transient success confirmation: capturedRow changes only when a capture
-  // resolves successfully (guarded per-command in the hook), so a stale/late
-  // event can't re-trigger it. setState runs only in timer callbacks (never
-  // synchronously in the effect body); all timers are cleared on unmount and
-  // before each new success, so they never stack.
   useEffect(() => {
     if (!capturedRow) return;
     const reveal = setTimeout(() => { setShowCaptured(true); setFlashImage(true); }, 0);
@@ -193,19 +181,14 @@ export default function DirtDetectionPage() {
     };
   }, [capturedRow]);
 
-  // Suppress the cue while a new capture is in progress (derived, not stateful).
   const captureConfirmed = showCaptured && phase !== "capturing";
   const flashActive = flashImage && phase !== "capturing";
 
   if (latestInitial && historyInitial) return <DirtDetectionSkeleton />;
 
-  // When the camera reports a quality failure the model output is unreliable, so
-  // the displayed percentages are not a real surface measurement.
   const qualityFailed = latest != null && latest.quality_ok === false;
   const qualityReasonText = qualityReasonLabel(latest?.quality_reason);
 
-  // A dirty surface only counts as actionable when the analysis itself is
-  // trustworthy — an obstructed camera already shows its own banner.
   const needsCleaning =
     latest != null &&
     !qualityFailed &&
@@ -213,8 +196,6 @@ export default function DirtDetectionPage() {
 
   const energyImpact = latest && !qualityFailed ? computeEnergyImpact(latest.dirt_level_percent ?? 0) : null;
 
-  // Colour the hero value/bar by the class label (not the numeric percent) so they
-  // agree with the badge; null class or a quality failure keeps the neutral grey.
   const severityColor = !qualityFailed && latest?.predicted_class ? SEVERITY_COLOR[latest.predicted_class] : null;
 
   return (

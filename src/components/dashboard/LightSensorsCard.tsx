@@ -17,12 +17,6 @@ interface LightSensorsCardProps {
 
 type LightBadge = { label: string; variant: "outline" | "destructive"; className: string };
 
-// The badge surfaces only states that carry information, in priority order: an active
-// tracking ERROR, device/inferred NIGHT, daytime LOW_LIGHT, or a clearly UNBALANCED light
-// skew. NIGHT/LOW_LIGHT come verbatim from the dashboard's computeLightState (tracking_mode
-// + sunrise/sunset) and are checked before balance, since near-zero night/low-light LDRs
-// make H/V diffs noise that must not read as an imbalance. Everything else shows no badge —
-// the steady balanced/adjusting states are intentionally silent to avoid clutter.
 const ERROR_BADGE: LightBadge = { label: "Error", variant: "destructive", className: "text-[10px]" };
 const NIGHT_BADGE: LightBadge = {
   label: "Night",

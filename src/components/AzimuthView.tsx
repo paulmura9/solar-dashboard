@@ -6,15 +6,10 @@ interface AzimuthViewProps {
   azimuthAngle: number;
 }
 
-// 180° servo-angle compass: the azimuth servo sweeps 0° (left) → 90° (top) → 180° (right),
-// mapped onto a half-dome arc; the needle screen-angle is (servo − 90°). The needle base is
-// anchored exactly at the pivot (CX, BASE_Y) and the tip is computed by trig, so the base
-// never drifts off-centre at any angle. Numeric degree labels only — the cardinal letters
-// live on the Sky View dome card, keeping this a pure servo-angle instrument.
 const CX = 120;
 const BASE_Y = 120;
 const R = 100;
-const NEEDLE_LEN = Math.round(R * 0.84); // tip stays comfortably inside the arc
+const NEEDLE_LEN = Math.round(R * 0.84);
 const LABEL_R = R + 8;
 const TICK_SERVO_ANGLES = [0, 45, 90, 135, 180];
 
@@ -68,7 +63,6 @@ export default function AzimuthView({ azimuthAngle }: AzimuthViewProps) {
             );
           })}
 
-          {/* Counterweight + needle: base hard-anchored at the pivot (CX, BASE_Y), tip by trig */}
           <line x1={CX} y1={BASE_Y} x2={CX - 16 * dirX} y2={BASE_Y - 16 * dirY} stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
           <line x1={CX} y1={BASE_Y} x2={tipX} y2={tipY} stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
           <polygon

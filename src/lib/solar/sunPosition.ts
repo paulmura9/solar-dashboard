@@ -1,9 +1,5 @@
 import SunCalc from "suncalc";
 
-// SunCalc reports angles in radians. Its azimuth is measured from SOUTH, clockwise
-// toward WEST (0 = due south, +π/2 = west, -π/2 = east) and altitude is measured up
-// from the horizon. We convert azimuth to a compass bearing from NORTH (clockwise)
-// so the widget shares the AzimuthView convention used elsewhere on the dashboard.
 const RAD_TO_DEG = 180 / Math.PI;
 const DEG_TO_RAD = Math.PI / 180;
 const ARC_STEP_MINUTES = 12;
@@ -54,16 +50,6 @@ export function sunArc(lat: number, lon: number, times: SunTimes): SkyPoint[] {
 
 const normalizeDeg = (deg: number): number => ((deg % 360) + 360) % 360;
 
-// ───────────────────────────────────────────────────────────────────────────
-// CANONICAL AZIMUTH CONVENTION (single source of truth — mirrored in CLAUDE.md).
-// "horizontal angle" = the raw azimuth servo angle, 0..180, HOME at 90°.
-// "azimuth"          = the cardinal compass bearing, NEVER the raw servo angle:
-//     panel azimuth = horizontal_angle + 90      (range 90..270)
-//     0°=E  /  90°=S  /  180°=W      HOME (servo 90°) aims at true South.
-// The sun's azimuth comes from suncalc (0..360, measured from North).
-// Never render this formula in the UI — show values only.
-// ───────────────────────────────────────────────────────────────────────────
-
 /** The panel's commanded compass (cardinal) azimuth, 90..270. */
 export function panelBearing(horizontalAngle: number): number {
   return normalizeDeg(horizontalAngle + 90);
@@ -93,7 +79,7 @@ export function panelAlignment(horizontalAngle: number): PanelAlignment {
   for (const c of PANEL_CARDINALS) {
     if (Math.abs(cardinal - c.deg) < Math.abs(cardinal - nearest.deg)) nearest = c;
   }
-  const offset = Math.round(cardinal - nearest.deg); // signed: + = toward W
+  const offset = Math.round(cardinal - nearest.deg);
   if (Math.abs(offset) <= 5) return { cardinal, label: `Aimed at ${nearest.label}` };
   const dir = nearest.label === "S" ? (offset > 0 ? "W" : "E") : "S";
   return { cardinal, label: `≈ ${nearest.label}, +${Math.abs(offset)}° toward ${dir}` };

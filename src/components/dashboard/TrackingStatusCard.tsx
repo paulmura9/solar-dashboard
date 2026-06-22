@@ -26,8 +26,6 @@ const MODE_STYLES: Record<PanelMode, ModeStyle> = {
 
 const TrackingStatusCard: FC<TrackingStatusCardProps> = ({ data, vision, stale = false, secondsAgo = null }) => {
   const mode: PanelMode = data?.mode ?? "IDLE";
-  // While stale the last reading no longer reflects current activity, so drop the
-  // active (green/amber) styling back to the neutral IDLE palette.
   const s: ModeStyle = stale ? MODE_STYLES.IDLE : (MODE_STYLES[mode] ?? MODE_STYLES.IDLE);
 
   return (

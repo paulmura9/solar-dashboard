@@ -4,19 +4,13 @@ import { useState, useCallback, type MouseEvent } from "react";
 import { useXAxisInverseScale, usePlotArea } from "recharts";
 import { formatAxisLabel, formatChartValue } from "@/lib/charts/chartStyles";
 
-// One plotted series the crosshair reads off: which point field to interpolate, how to label
-// it, and the stroke colour it matches on the chart.
 export interface CrosshairSeries {
   key: string;
   name: string;
-  unit: string; // leading-space form: " W" | " V" — or attached: "°" | "%"
+  unit: string;
   color: string;
 }
 
-// Tracks the raw cursor pixel for one chart. Recharts v3's onMouseMove state no longer exposes
-// chartX, so we read it straight off the DOM: clientX minus the wrapper's left edge equals the
-// chart-space x (the SVG fills the wrapper 1:1). currentTarget is the wrapper the handler is
-// bound to, so no ref is needed. null means the pointer has left the chart.
 export function useCrosshair() {
   const [mouseX, setMouseX] = useState<number | null>(null);
   const onMouseMove = useCallback((e: MouseEvent<HTMLDivElement>) => {
@@ -31,9 +25,6 @@ function readNumber(point: { ts: number }, key: string): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-// Linear interpolation of a series at instant `t` (epoch ms). Data is sorted ascending by ts;
-// outside the data range we clamp to the nearest end, and a missing endpoint falls back to the
-// other so flat/gappy zones still report a value.
 function interpolate(data: ReadonlyArray<{ ts: number }>, key: string, t: number): number | null {
   const n = data.length;
   if (n === 0) return null;
@@ -61,10 +52,6 @@ function interpolate(data: ReadonlyArray<{ ts: number }>, key: string, t: number
 const ROW_H = 15;
 const BOX_W = 184;
 
-// Renders directly as a chart child (Recharts v3 no longer needs <Customized>). useXAxisInverseScale
-// turns the cursor pixel into the exact instant under it — interpolated, not snapped to a point — and
-// usePlotArea bounds the vertical rule. Draws a dashed crosshair plus a label with the exact moment
-// and every series' interpolated value. Returns null when the pointer is away.
 export function ChartCrosshair({
   mouseX,
   data,
