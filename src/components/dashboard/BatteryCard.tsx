@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { NumberTicker } from "@/components/magic/NumberTicker";
 import { formatVoltage } from "@/lib/solar/energy";
 import { useStableValue } from "@/lib/hooks/useStableValue";
+import { useSettledPercent } from "@/lib/hooks/useSettledPercent";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
@@ -63,7 +64,7 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
 }
 
 const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
-  const smPercent = useStableValue(r?.battery_percent ?? null, { jump: 0.05, floor: 3, persist: 3 });
+  const smPercent = useSettledPercent(r?.battery_percent ?? null, r?.battery_status ?? null, r?.id ?? null);
   const smVoltage = useStableValue(r?.battery_voltage ?? null, { jump: 0.05, floor: 0.04, persist: 3 });
   const pct = clampPercent(smPercent != null ? Math.round(smPercent) : null);
   const status = r?.battery_status ?? null;
