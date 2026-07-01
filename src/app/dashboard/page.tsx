@@ -132,7 +132,7 @@ export default function OverviewPage() {
       <ErrorBoundary>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
           <SolarProductionCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
-          <BatteryCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
+          <BatteryCard reading={latest} history={history} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <ChargingCard reading={latest} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <TrackingStatusCard data={panelStatus} vision={vision} stale={isStale} secondsAgo={secondsSinceLastReading} />
           <LightSensorsCard

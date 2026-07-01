@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC } from "react";
+import { useMemo, type FC } from "react";
 import { BatteryCharging, BatteryFull, BatteryMedium, BatteryLow, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,14 +9,25 @@ import { formatVoltage } from "@/lib/solar/energy";
 import { useStableValue } from "@/lib/hooks/useStableValue";
 import { useSettledPercent } from "@/lib/hooks/useSettledPercent";
 import { SOLAR_CONFIG } from "@/config/solarConfig";
+import { estimateDischarge } from "@/lib/solar/batteryDrain";
 import MetricRow from "./MetricRow";
 import LastUpdatedStamp from "./LastUpdatedStamp";
 import type { SensorReading, BatteryStatus } from "@/lib/types";
 
 interface BatteryCardProps {
   reading: SensorReading | null;
+  history?: readonly SensorReading[];
   stale?: boolean;
   secondsAgo?: number | null;
+}
+
+const EMPTY_HISTORY: readonly SensorReading[] = [];
+
+/** Compact time-left label; caps large/near-zero estimates at ">99 h". */
+function formatTimeLeft(hours: number | null): string {
+  if (hours == null || hours > 99) return ">99 h";
+  if (hours < 1) return `~${Math.round(hours * 60)} min`;
+  return `~${Math.round(hours)} h`;
 }
 
 function clampPercent(pct: number | null): number | null {
@@ -63,7 +74,7 @@ function HeaderIcon({ status, pct }: { status: BatteryStatus | null; pct: number
   return <BatteryLow size={13} className={cls} />;
 }
 
-const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsAgo = null }) => {
+const BatteryCard: FC<BatteryCardProps> = ({ reading: r, history = EMPTY_HISTORY, stale = false, secondsAgo = null }) => {
   const smPercent = useSettledPercent(r?.battery_percent ?? null, r?.battery_status ?? null, r?.id ?? null);
   const smVoltage = useStableValue(r?.battery_voltage ?? null, { jump: 0.05, floor: 0.04, persist: 3 });
   const pct = clampPercent(smPercent != null ? Math.round(smPercent) : null);
@@ -71,6 +82,11 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
   const color = getBatteryColor(pct);
   const ss: StatusStyle = (status != null ? STATUS_STYLES[status] : undefined) ?? DEFAULT_STATUS_STYLE;
   const alert = batteryAlert(pct);
+
+  const drain = useMemo(
+    () => (status === "DISCHARGING" && pct != null ? estimateDischarge(history, pct) : null),
+    [status, pct, history],
+  );
 
   return (
     <Card className={stale ? "opacity-60" : undefined}>
@@ -120,6 +136,14 @@ const BatteryCard: FC<BatteryCardProps> = ({ reading: r, stale = false, secondsA
             ) : "—"}
           />
         </div>
+        {drain && (
+          <p
+            className="text-[10px] text-[#94a3b8] -mt-1"
+            title="Estimated from the recent battery-level trend"
+          >
+            ↓ {drain.ratePctPerHour.toFixed(1)} %/h · {formatTimeLeft(drain.timeLeftHours)} left
+          </p>
+        )}
         {alert && (
           <div
             className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium"
