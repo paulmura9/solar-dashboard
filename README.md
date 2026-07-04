@@ -75,8 +75,7 @@ Versions below are taken from `package.json`.
 
 ## 2. Deliverables / Repository
 
-- **Repository:** `<https://gitlab.upt.ro/...>` *(placeholder — replace with the actual
-  project URL)*
+- **Live site:** <https://solar-dashboard-beige.vercel.app>
 
 The repository contains the **full source code** of the dashboard, with **no compiled
 binaries**. In particular, the Next.js build output (`.next/`) and the installed
