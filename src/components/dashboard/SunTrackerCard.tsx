@@ -16,6 +16,7 @@ import {
   type SkyPoint,
 } from "@/lib/solar/sunPosition";
 import { formatHorizontalDiff, formatVerticalDiff, isOnSun } from "@/lib/solar/lightState";
+import { SOLAR_CONFIG } from "@/config/solarConfig";
 import type { LightState } from "@/lib/types";
 
 interface SunTrackerCardProps {
@@ -41,6 +42,19 @@ const DOME_R = 150;
 const ELEVATION_GUIDES = [30, 60];
 const REFRESH_MS = 60_000;
 const ALIGNED_OFFSET_DEG = 10;
+
+/**
+ * Panel position across the horizontal servo range as a 0-100% fill:
+ * (servo − min) / (max − min). 5° → 0%, 90° → 50%, 175° → 100%. Clamped so
+ * out-of-range telemetry can never read below 0% or above 100%. This is the
+ * panel's mechanical position, distinct from the LDR light-balance % shown in
+ * the guidance readout below the dome.
+ */
+function panelPositionPercent(servoAngle: number): number {
+  const { minAngle, maxAngle } = SOLAR_CONFIG.panel;
+  const clamped = Math.min(maxAngle, Math.max(minAngle, servoAngle));
+  return Math.round(((clamped - minAngle) / (maxAngle - minAngle)) * 100);
+}
 
 /** Project a sky point into SVG pixel coordinates within the dome. */
 function toPixels(point: SkyPoint): { x: number; y: number } {
@@ -109,6 +123,7 @@ export default function SunTrackerCard({
 
   const panelCardinalAz = panelAzimuth != null ? panelBearing(panelAzimuth) : null;
   const align = panelAzimuth != null ? panelAlignment(panelAzimuth) : null;
+  const panelPositionPct = panelAzimuth != null ? panelPositionPercent(panelAzimuth) : null;
 
   const panelSky: SkyPoint | null =
     panelCardinalAz != null && panelElevation != null
@@ -189,6 +204,7 @@ export default function SunTrackerCard({
             {align && <span className="text-[#64748b]">{"  "}({align.label})</span>}
             <span className="block text-[11px] text-[#94a3b8]">
               servo {panelAzimuth != null ? `${Math.round(panelAzimuth)}°` : "—"}
+              {panelPositionPct != null ? ` · position ${panelPositionPct}%` : ""}
               {panelEl != null ? ` · elev ${Math.round(panelEl)}°` : ""}
             </span>
           </div>
